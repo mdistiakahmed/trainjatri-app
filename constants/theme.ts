@@ -5,8 +5,8 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#1877F2'; // Facebook blue
+const tintColorDark = '#1877F2'; // Facebook blue
 
 export const Colors = {
   light: {
