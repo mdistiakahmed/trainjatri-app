@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   ImageBackground,
+  Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
@@ -22,6 +23,7 @@ import {
   saveStationToQuickAccess,
   removeStationFromQuickAccess,
 } from '@/utils/quickAccessStorage';
+import AdPlaceholder from '@/components/ads/AdPlaceholder';
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, '_');
@@ -40,6 +42,8 @@ export default function StationDetailScreen() {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -50,6 +54,19 @@ export default function StationDetailScreen() {
   useEffect(() => {
     navigation.setOptions({ title: `${stationName} Station` });
     checkIfSaved();
+
+    // Keyboard listeners
+    const keyboardWillShow = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const keyboardWillHide = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, [stationName, navigation]);
 
   const checkIfSaved = async () => {
@@ -98,119 +115,129 @@ export default function StationDetailScreen() {
       imageStyle={styles.backgroundImageStyle}
     >
       <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={styles.buttonSection}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.saveButton,
-              {
-                backgroundColor: isSaved
-                  ? '#1877F2'
-                  : colorScheme === 'dark'
-                  ? '#2a2a2a'
-                  : '#f5f5f5',
-                opacity: pressed ? 0.7 : 1,
-              },
-            ]}
-            onPress={handleBookmark}
-          >
-            <ThemedText
-              style={[
-                styles.saveButtonText,
-                { color: isSaved ? '#fff' : colors.text },
+        <ScrollView 
+          style={styles.mainScrollView}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollViewContent}
+        >
+          <View style={styles.buttonSection}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveButton,
+                {
+                  backgroundColor: isSaved
+                    ? '#1877F2'
+                    : colorScheme === 'dark'
+                    ? '#2a2a2a'
+                    : '#f5f5f5',
+                  opacity: pressed ? 0.7 : 1,
+                },
               ]}
+              onPress={handleBookmark}
             >
-              {isSaved ? '⭐ ' : '☆ '}
-              {isSaved ? 'Saved to Quick Access' : 'Save to Quick Access'}
-            </ThemedText>
-          </Pressable>
-        </View>
-
-        <View style={styles.header}>
-          <Image
-            source={require('@/assets/images/logo.png')}
-            style={styles.logo}
-            contentFit="contain"
-          />
-          <ThemedText
-            type="title"
-            style={[styles.title, { fontFamily: Fonts.rounded }]}
-          >
-            {stationName} Station
-          </ThemedText>
-          {stationNameBn && (
-            <ThemedText style={styles.titleBn}>
-              {stationNameBn} স্টেশন
-            </ThemedText>
-          )}
-          <ThemedText style={styles.subtitle}>
-            {routes.length} train route{routes.length !== 1 ? 's' : ''} available
-          </ThemedText>
-        </View>
-
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={[
-            styles.searchInput,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-              color: colors.text,
-            },
-          ]}
-          placeholder="Search destination / গন্তব্য সার্চ করুন"
-          placeholderTextColor={colors.tabIconDefault}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.routesList}>
-          {filteredRoutes.length > 0 ? (
-            filteredRoutes.map((route, index) => {
-              const [from, to] = route.route.split(' - ');
-              const toBengali = getBengaliStationName(to);
-
-              return (
-                <Pressable
-                  key={index}
-                  style={({ pressed }) => [
-                    styles.routeCard,
-                    {
-                      backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#fff',
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                  onPress={() => handleDestinationPress(to)}
-                >
-                  <View style={styles.routeInfo}>
-                    <View style={styles.routeHeader}>
-                      <ThemedText style={styles.fromStation}>{from}</ThemedText>
-                      <ThemedText style={styles.arrow}>→</ThemedText>
-                      <ThemedText style={styles.toStation}>{to}</ThemedText>
-                    </View>
-                    {toBengali && (
-                      <ThemedText style={styles.routeBengali}>
-                        {getBengaliStationName(from)} থেকে {toBengali}
-                      </ThemedText>
-                    )}
-                    <ThemedText style={styles.routeDescription}>
-                      Tap to view train schedule
-                    </ThemedText>
-                  </View>
-                </Pressable>
-              );
-            })
-          ) : (
-            <View style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyText}>
-                No routes found matching your search.
+              <ThemedText
+                style={[
+                  styles.saveButtonText,
+                  { color: isSaved ? '#fff' : colors.text },
+                ]}
+              >
+                {isSaved ? '⭐ ' : '☆ '}
+                {isSaved ? 'Saved to Quick Access' : 'Save to Quick Access'}
               </ThemedText>
-            </View>
-          )}
-        </View>
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </ThemedView>
+            </Pressable>
+          </View>
+
+          <View style={styles.header}>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={styles.logo}
+              contentFit="contain"
+            />
+            <ThemedText
+              type="title"
+              style={[styles.title, { fontFamily: Fonts.rounded }]}
+            >
+              {stationName} Station
+            </ThemedText>
+            {stationNameBn && (
+              <ThemedText style={styles.titleBn}>
+                {stationNameBn} স্টেশন
+              </ThemedText>
+            )}
+            <ThemedText style={styles.subtitle}>
+              {routes.length} train route{routes.length !== 1 ? 's' : ''} available
+            </ThemedText>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+                  color: colors.text,
+                  borderWidth: isSearchFocused ? 3 : 3,
+                  borderColor: isSearchFocused ? '#1877F2' : '#000',
+                },
+              ]}
+              placeholder="Search destination / গন্তব্য সার্চ করুন"
+              placeholderTextColor={colors.tabIconDefault}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+          </View>
+
+          <AdPlaceholder />
+
+          <View style={styles.routesList}>
+            {filteredRoutes.length > 0 ? (
+              filteredRoutes.map((route, index) => {
+                const [from, to] = route.route.split(' - ');
+                const toBengali = getBengaliStationName(to);
+
+                return (
+                  <Pressable
+                    key={index}
+                    style={({ pressed }) => [
+                      styles.routeCard,
+                      {
+                        backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#fff',
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={() => handleDestinationPress(to)}
+                  >
+                    <View style={styles.routeInfo}>
+                      <View style={styles.routeHeader}>
+                        <ThemedText style={styles.fromStation}>{from}</ThemedText>
+                        <ThemedText style={styles.arrow}>→</ThemedText>
+                        <ThemedText style={styles.toStation}>{to}</ThemedText>
+                      </View>
+                      {toBengali && (
+                        <ThemedText style={styles.routeBengali}>
+                          {getBengaliStationName(from)} থেকে {toBengali}
+                        </ThemedText>
+                      )}
+                      <ThemedText style={styles.routeDescription}>
+                        Tap to view train schedule
+                      </ThemedText>
+                    </View>
+                  </Pressable>
+                );
+              })
+            ) : (
+              <View style={styles.emptyContainer}>
+                <ThemedText style={styles.emptyText}>
+                  No routes found matching your search.
+                </ThemedText>
+              </View>
+            )}
+          </View>
+          <View style={{ height: keyboardHeight > 0 ? keyboardHeight + 40 : 40 }} />
+        </ScrollView>
+      </ThemedView>
     </ImageBackground>
   );
 }
@@ -225,6 +252,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  mainScrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
   buttonSection: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -232,19 +265,19 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 2,
     borderColor: '#1877F2',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   saveButtonText: {
-    fontSize: 13,
+    fontSize: 9,
     fontWeight: '600',
   },
   header: {

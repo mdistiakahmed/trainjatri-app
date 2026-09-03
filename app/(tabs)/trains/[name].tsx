@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { Image } from "expo-image";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { getDataForTrain } from "@/utils/getData";
@@ -17,6 +17,7 @@ import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { Fonts } from "@/constants/theme";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
   isTrainSaved,
   saveTrainToQuickAccess,
@@ -71,11 +72,12 @@ const banglaDaysOfWeek = [
 const shortDaysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function TrainDetailScreen() {
-  const { name } = useLocalSearchParams<{ name: string }>();
+  const { name, returnTo } = useLocalSearchParams<{ name: string; returnTo?: string }>();
   const navigation = useNavigation();
   const [trainData, setTrainData] = useState<TrainData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<'forward' | 'reverse'>('forward');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -111,9 +113,26 @@ export default function TrainDetailScreen() {
     if (trainData) {
       const activeRoute = trainData.forward ?? trainData.reverse;
       const trainName = activeRoute?.train_name ?? "";
-      navigation.setOptions({ title: trainName || "Train Details" });
+      
+      navigation.setOptions({ 
+        title: trainName || "Train Details",
+        headerLeft: () => (
+          <Pressable
+            onPress={() => {
+              if (returnTo) {
+                router.push(returnTo as any);
+              } else {
+                router.back();
+              }
+            }}
+            style={{ marginLeft: 8 }}
+          >
+            <IconSymbol name="chevron.left" size={24} color="#007AFF" />
+          </Pressable>
+        ),
+      });
     }
-  }, [trainData, navigation]);
+  }, [trainData, navigation, returnTo]);
 
   const loadTrainData = async () => {
     try {
@@ -319,62 +338,57 @@ export default function TrainDetailScreen() {
             </View>
           </View>
 
-          {trainData.forward && (
-            <View style={styles.summaryBox}>
-              <ThemedText style={styles.summaryText}>
-                {trainData.forward.train_name} travels {trainData.forward.path}{" "}
-                on every day of the week except{" "}
-                {getOffDay(trainData.forward.days)}. It departs from{" "}
-                {trainData.forward.routes[0].city} at{" "}
-                {trainData.forward.routes[0].departure_time?.replace(
-                  " BST",
-                  "",
-                )}
-                , and arrives at{" "}
-                {
-                  trainData.forward.routes[trainData.forward.routes.length - 1]
-                    .city
-                }{" "}
-                at{" "}
-                {trainData.forward.routes[
-                  trainData.forward.routes.length - 1
-                ].arrival_time?.replace(" BST", "")}
-                . It takes total {trainData.forward.total_duration}.
-              </ThemedText>
-            </View>
-          )}
-
-          {trainData.reverse && (
-            <View style={styles.summaryBox}>
-              <ThemedText style={styles.summaryText}>
-                {trainData.reverse.train_name} travels {trainData.reverse.path}{" "}
-                on every day of the week except{" "}
-                {getOffDay(trainData.reverse.days)}. It departs from{" "}
-                {trainData.reverse.routes[0].city} at{" "}
-                {trainData.reverse.routes[0].departure_time?.replace(
-                  " BST",
-                  "",
-                )}
-                , and arrives at{" "}
-                {
-                  trainData.reverse.routes[trainData.reverse.routes.length - 1]
-                    .city
-                }{" "}
-                at{" "}
-                {trainData.reverse.routes[
-                  trainData.reverse.routes.length - 1
-                ].arrival_time?.replace(" BST", "")}
-                . It takes total {trainData.reverse.total_duration}.
-              </ThemedText>
-            </View>
-          )}
-
           <AdPlaceholder />
 
-          {trainData.forward && renderRouteTable(trainData.forward)}
-          {trainData.reverse && renderRouteTable(trainData.reverse)}
-          {trainData.forward_2 && renderRouteTable(trainData.forward_2)}
-          {trainData.reverse_2 && renderRouteTable(trainData.reverse_2)}
+          {/* Tabs for trains with both forward and reverse routes */}
+          {trainData.forward && trainData.reverse ? (
+            <View style={styles.tabContainer}>
+              <View style={styles.tabButtons}>
+                <Pressable
+                  style={[
+                    styles.tabButton,
+                    activeTab === 'forward' && styles.tabButtonActive,
+                  ]}
+                  onPress={() => setActiveTab('forward')}
+                >
+                  <ThemedText
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === 'forward' && styles.tabButtonTextActive,
+                    ]}
+                  >
+                    {trainData.forward.path}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.tabButton,
+                    activeTab === 'reverse' && styles.tabButtonActive,
+                  ]}
+                  onPress={() => setActiveTab('reverse')}
+                >
+                  <ThemedText
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === 'reverse' && styles.tabButtonTextActive,
+                    ]}
+                  >
+                    {trainData.reverse.path}
+                  </ThemedText>
+                </Pressable>
+              </View>
+              
+              {activeTab === 'forward' && renderRouteTable(trainData.forward)}
+              {activeTab === 'reverse' && renderRouteTable(trainData.reverse)}
+            </View>
+          ) : (
+            <>
+              {trainData.forward && renderRouteTable(trainData.forward)}
+              {trainData.reverse && renderRouteTable(trainData.reverse)}
+              {trainData.forward_2 && renderRouteTable(trainData.forward_2)}
+              {trainData.reverse_2 && renderRouteTable(trainData.reverse_2)}
+            </>
+          )}
 
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -435,32 +449,61 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 2,
     borderColor: "#1877F2",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  saveButtonText: {
+    fontSize: 9,
+    fontWeight: "600",
+  },
+  tabContainer: {
+    marginTop: 10,
+  },
+  tabButtons: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+  },
+  tabButtonActive: {
+    backgroundColor: '#1877F2',
+    shadowColor: '#1877F2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
-  saveButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
+  tabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
   },
-  summaryBox: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  summaryText: {
-    fontSize: 14,
-    lineHeight: 20,
+  tabButtonTextActive: {
+    color: '#fff',
+    fontWeight: '700',
   },
   routeSection: {
     marginHorizontal: 20,

@@ -17,7 +17,6 @@ import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
-import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 const stripBracketContent = (name: string) => {
   return name.replace(/\s*\(.*?\)\s*/g, "").trim();
@@ -25,6 +24,7 @@ const stripBracketContent = (name: string) => {
 
 export default function TrainsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -55,40 +55,47 @@ export default function TrainsScreen() {
       <ThemedView
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
-        <View style={styles.header}>
-          <ThemedText
-            type="title"
-            style={[styles.title, { fontFamily: Fonts.rounded }]}
-          >
-            Trains Schedule
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Discover trains across Bangladesh
-          </ThemedText>
-          <Image
-            source={require("@/assets/images/logo.png")}
-            style={styles.logo}
-            contentFit="contain"
-          />
-        </View>
+        <ScrollView 
+          style={styles.mainScrollView}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={styles.logo}
+              contentFit="contain"
+            />
+            <ThemedText
+              type="title"
+              style={[styles.title, { fontFamily: Fonts.rounded }]}
+            >
+              Trains Schedule
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              Discover trains across Bangladesh
+            </ThemedText>
+          </View>
 
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={[
-              styles.searchInput,
-              {
-                backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
-                color: colors.text,
-              },
-            ]}
-            placeholder="Search train name / ট্রেন সার্চ করুন"
-            placeholderTextColor={colors.tabIconDefault}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
+                  color: colors.text,
+                  borderWidth: isSearchFocused ? 3 : 2,
+                  borderColor: isSearchFocused ? "#1877F2" : "#000",
+                },
+              ]}
+              placeholder="Search train name / ট্রেন সার্চ করুন"
+              placeholderTextColor={colors.tabIconDefault}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+          </View>
 
-        <ScrollView style={styles.scrollView}>
           <View style={styles.trainsGrid}>
             {filteredTrains.map((trainName) => {
               const cleanName = stripBracketContent(trainName);
@@ -123,6 +130,7 @@ export default function TrainsScreen() {
               );
             })}
           </View>
+          <View style={{ height: 40 }} />
         </ScrollView>
       </ThemedView>
     </ImageBackground>
@@ -137,6 +145,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   container: {
+    flex: 1,
+  },
+  mainScrollView: {
     flex: 1,
   },
   header: {
@@ -170,9 +181,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
   },
   trainsGrid: {
     paddingHorizontal: 20,

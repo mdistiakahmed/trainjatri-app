@@ -8,10 +8,10 @@ import {
   ImageBackground,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { parseRouteUrlSlug } from '@/utils/stringutils';
+import { parseRouteUrlSlug, formatStationNameForUrl } from '@/utils/stringutils';
 import { getTrainsForRoute } from '@/utils/routeData';
 import { cityEnBnMapping } from '@/utils/stationNameEnBnMapping';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -22,6 +22,7 @@ import {
   saveRouteToQuickAccess,
   removeRouteFromQuickAccess,
 } from '@/utils/quickAccessStorage';
+import AdPlaceholder from '@/components/ads/AdPlaceholder';
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, '_');
@@ -42,6 +43,56 @@ const getDayName = (day: string): string => {
     'Sat': 'Saturday',
   };
   return days[day] || day;
+};
+
+const getDayNameBengali = (day: string): string => {
+  const daysBn: Record<string, string> = {
+    'Sun': 'রবিবার',
+    'Mon': 'সোমবার',
+    'Tue': 'মঙ্গলবার',
+    'Wed': 'বুধবার',
+    'Thu': 'বৃহস্পতিবার',
+    'Fri': 'শুক্রবার',
+    'Sat': 'শনিবার',
+  };
+  return daysBn[day] || day;
+};
+
+const getOffDays = (operatingDays: string[]): { english: string; bengali: string } => {
+  const allDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const offDays = allDays.filter(day => !operatingDays.includes(day));
+  
+  if (offDays.length === 0) {
+    return {
+      english: 'None (Daily)',
+      bengali: 'সপ্তাহের প্রতিদিন চলে',
+    };
+  }
+  
+  return {
+    english: offDays.map(getDayName).join(', '),
+    bengali: offDays.map(getDayNameBengali).join(', '),
+  };
+};
+
+const parseTime = (timeString: string): number => {
+  // Parse time like "10:30 AM BST" or "10:30 AM" to minutes since midnight
+  const cleanTime = timeString.replace(' BST', '').trim();
+  const match = cleanTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  
+  if (!match) return 0;
+  
+  let hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const period = match[3].toUpperCase();
+  
+  if (period === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (period === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  
+  return hours * 60 + minutes;
 };
 
 export default function RouteDetailScreen() {
@@ -85,13 +136,31 @@ export default function RouteDetailScreen() {
     }
   }; // Use slug instead of stations to avoid infinite loop
 
+  const handleViewTrainSchedule = (trainName: string) => {
+    const trainSlug = trainName.toLowerCase().replace(/\s+/g, '-');
+    // Pass the current route as returnTo parameter
+    const currentRoute = `/(tabs)/stations/${stations?.from ? formatStationNameForUrl(stations.from) : ''}/${slug}`;
+    router.push({
+      pathname: `/(tabs)/trains/${trainSlug}` as any,
+      params: { returnTo: currentRoute }
+    });
+  };
+
   const loadTrains = async () => {
     if (!stations) return;
     
     try {
       setLoading(true);
       const trainsData = await getTrainsForRoute(stations.from, stations.to);
-      setTrains(trainsData);
+      
+      // Sort trains by departure time
+      const sortedTrains = trainsData.sort((a, b) => {
+        const timeA = parseTime(a.departure_from_source);
+        const timeB = parseTime(b.departure_from_source);
+        return timeA - timeB;
+      });
+      
+      setTrains(sortedTrains);
     } catch (error) {
       console.error('Error loading trains:', error);
     } finally {
@@ -178,6 +247,8 @@ export default function RouteDetailScreen() {
           </ThemedText>
         </View>
 
+        <AdPlaceholder />
+
         {trains.length > 0 ? (
           <View style={styles.trainsList}>
             {trains.map((train, index) => (
@@ -189,7 +260,16 @@ export default function RouteDetailScreen() {
                 ]}
               >
                 <View style={styles.trainHeader}>
-                  <ThemedText style={styles.trainName}>{train.train_name}</ThemedText>
+                  <View style={styles.trainNameContainer}>
+                    <ThemedText style={styles.trainName}>{train.train_name}</ThemedText>
+                    <Pressable 
+                      style={styles.viewDetailsButton}
+                      onPress={() => handleViewTrainSchedule(train.train_name)}
+                    >
+                      <ThemedText style={styles.viewDetailsText}>View Details</ThemedText>
+                      <ThemedText style={styles.viewDetailsIcon}>↗</ThemedText>
+                    </Pressable>
+                  </View>
                   <ThemedText style={styles.trainNumber}>#{train.train_number}</ThemedText>
                 </View>
 
@@ -215,9 +295,12 @@ export default function RouteDetailScreen() {
                     <ThemedText style={styles.detailValue}>{train.journey_duration}</ThemedText>
                   </View>
                   <View style={styles.detailItem}>
-                    <ThemedText style={styles.detailLabel}>Operating Days</ThemedText>
+                    <ThemedText style={styles.detailLabel}>Off Day</ThemedText>
                     <ThemedText style={styles.detailValue}>
-                      {train.days.map(getDayName).join(', ')}
+                      {getOffDays(train.days).english}
+                    </ThemedText>
+                    <ThemedText style={styles.detailValueBn}>
+                      {getOffDays(train.days).bengali}
                     </ThemedText>
                   </View>
                 </View>
@@ -271,19 +354,19 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 2,
     borderColor: '#1877F2',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   saveButtonText: {
-    fontSize: 13,
+    fontSize: 9,
     fontWeight: '600',
   },
   header: {
@@ -341,10 +424,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  trainNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
   trainName: {
     fontSize: 18,
     fontWeight: '700',
-    flex: 1,
+  },
+  viewDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+    marginTop: -2,
+  },
+  viewDetailsText: {
+    fontSize: 9,
+    color: '#1877F2',
+    fontWeight: '600',
+  },
+  viewDetailsIcon: {
+    fontSize: 12,
+    color: '#1877F2',
+    marginLeft: 2,
   },
   trainNumber: {
     fontSize: 14,
@@ -395,6 +498,12 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  detailValueBn: {
+    fontSize: 11,
+    fontWeight: '500',
+    opacity: 0.7,
+    marginTop: 2,
   },
   emptyContainer: {
     padding: 40,
