@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "trainjatri-app",
+    "name": "TrainJatri",
     "slug": "trainjatri-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,16 +8,25 @@
     "scheme": "trainjatriapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Your Complete Bangladesh Railway Guide - Find train schedules, track trains in real-time, and get station information for all major routes across Bangladesh.",
+    "primaryColor": "#1877F2",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.trainjatri.app"
     },
     "android": {
+      "package": "com.trainjatri.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

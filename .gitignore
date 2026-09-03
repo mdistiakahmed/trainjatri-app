@@ -41,3 +41,14 @@ app-example
 # generated native folders
 /ios
 /android
+
+# EAS
+*.aab
+*.apk
+google-services.json
+GoogleService-Info.plist
+eas-build-*.json
+
+# Google Play
+pc-api-*.json
+service-account-*.json
