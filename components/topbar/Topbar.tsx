@@ -68,13 +68,14 @@ export default function Topbar() {
   }, [menuVisible]);
 
   const handleLogoPress = () => {
-    router.push('/(tabs)');
+    // Use navigate to go to home tab root and clear history
+    router.navigate('/(tabs)');
   };
 
   const handleShareFeedback = () => {
     setMenuVisible(false);
     // Open email client for feedback
-    const email = 'feedback@trainjatri.com';
+    const email = 'randzyx62@gmail.com';
     const subject = 'Feedback for Train Jatri App';
     const body = 'Please share your feedback here...';
     Linking.openURL(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);

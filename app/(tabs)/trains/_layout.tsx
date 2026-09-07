@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { TrainBackButton } from '@/components/navigation/TrainBackButton';
 
 export default function TrainsLayout() {
   return (
@@ -15,6 +16,7 @@ export default function TrainsLayout() {
         options={{ 
           title: 'Train Details',
           headerShown: true,
+          headerLeft: () => <TrainBackButton />,
         }} 
       />
     </Stack>

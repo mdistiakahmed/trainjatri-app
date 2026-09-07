@@ -138,11 +138,10 @@ export default function RouteDetailScreen() {
 
   const handleViewTrainSchedule = (trainName: string) => {
     const trainSlug = trainName.toLowerCase().replace(/\s+/g, '-');
-    // Pass the current route as returnTo parameter
     const currentRoute = `/(tabs)/stations/${stations?.from ? formatStationNameForUrl(stations.from) : ''}/${slug}`;
     router.push({
       pathname: `/(tabs)/trains/${trainSlug}` as any,
-      params: { returnTo: currentRoute }
+      params: { from: 'station-route', returnTo: currentRoute }
     });
   };
 

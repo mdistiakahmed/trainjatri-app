@@ -17,7 +17,6 @@ import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { Fonts } from "@/constants/theme";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
   isTrainSaved,
   saveTrainToQuickAccess,
@@ -72,7 +71,7 @@ const banglaDaysOfWeek = [
 const shortDaysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function TrainDetailScreen() {
-  const { name, returnTo } = useLocalSearchParams<{ name: string; returnTo?: string }>();
+  const { name } = useLocalSearchParams<{ name: string }>();
   const navigation = useNavigation();
   const [trainData, setTrainData] = useState<TrainData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,23 +115,9 @@ export default function TrainDetailScreen() {
       
       navigation.setOptions({ 
         title: trainName || "Train Details",
-        headerLeft: () => (
-          <Pressable
-            onPress={() => {
-              if (returnTo) {
-                router.push(returnTo as any);
-              } else {
-                router.back();
-              }
-            }}
-            style={{ marginLeft: 8 }}
-          >
-            <IconSymbol name="chevron.left" size={24} color="#007AFF" />
-          </Pressable>
-        ),
       });
     }
-  }, [trainData, navigation, returnTo]);
+  }, [trainData, navigation]);
 
   const loadTrainData = async () => {
     try {

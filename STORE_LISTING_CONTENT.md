@@ -68,7 +68,7 @@ Download TrainJatri today and make your railway journey planning effortless!
 
 ---
 
-For support or feedback: feedback@trainjatri.com
+For support or feedback: randzyx62@gmail.com
 Website: trainjatri.com
 ```
 
@@ -101,7 +101,7 @@ Rate us and share feedback to help us improve.
 ```
 
 ## Contact Information
-**Email:** feedback@trainjatri.com (or your email)
+**Email:** randzyx62@gmail.com
 **Website:** https://trainjatri.com (or your website)
 **Phone:** (optional)
 
@@ -191,7 +191,7 @@ We may update our Privacy Policy from time to time. We will notify you of any ch
 
 CONTACT US
 If you have any questions about this Privacy Policy, please contact us at:
-Email: feedback@trainjatri.com
+Email: randzyx62@gmail.com
 ```
 
 ---

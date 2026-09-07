@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
@@ -24,12 +24,24 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.navigate('/(tabs)');
+          },
+        }}
       />
       <Tabs.Screen
         name="trains"
         options={{
           title: 'Trains',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="train.side.front.car" color={color} />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.navigate('/(tabs)/trains');
+          },
         }}
       />
       <Tabs.Screen
@@ -38,12 +50,24 @@ export default function TabLayout() {
           title: 'Stations',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
         }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.navigate('/(tabs)/stations');
+          },
+        }}
       />
       <Tabs.Screen
         name="live-tracking"
         options={{
           title: 'Live Tracking',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.fill" color={color} />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.navigate('/(tabs)/live-tracking');
+          },
         }}
       />
     </Tabs>

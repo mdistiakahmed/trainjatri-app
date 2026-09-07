@@ -1,24 +1,12 @@
-import { Stack, router } from 'expo-router';
-import { Pressable, Platform } from 'react-native';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Stack } from 'expo-router';
+import { SmartBackButton } from '@/components/navigation/SmartBackButton';
 
 export default function StationNameLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerLeft: () => (
-          <Pressable
-            onPress={() => router.back()}
-            style={{ marginLeft: Platform.OS === 'ios' ? 0 : 10 }}
-          >
-            <IconSymbol
-              name="chevron.left"
-              size={24}
-              color="#007AFF"
-            />
-          </Pressable>
-        ),
+        headerLeft: () => <SmartBackButton fallbackRoute="/(tabs)/stations" />,
       }}
     >
       <Stack.Screen 
