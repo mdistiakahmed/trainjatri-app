@@ -45,7 +45,6 @@ app-example
 # EAS
 *.aab
 *.apk
-google-services.json
 GoogleService-Info.plist
 eas-build-*.json
 
