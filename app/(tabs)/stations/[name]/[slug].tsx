@@ -23,6 +23,7 @@ import {
   removeRouteFromQuickAccess,
 } from '@/utils/quickAccessStorage';
 import AdPlaceholder from '@/components/ads/AdPlaceholder';
+import { SmartBackButton } from '@/components/navigation/SmartBackButton';
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, '_');
@@ -200,6 +201,13 @@ export default function RouteDetailScreen() {
       <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <ScrollView style={styles.scrollView}>
           <View style={styles.buttonSection}>
+            <SmartBackButton
+              fallbackRoute={
+                stations?.from
+                  ? (`/(tabs)/stations/${formatStationNameForUrl(stations.from)}` as any)
+                  : '/(tabs)/stations'
+              }
+            />
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
@@ -350,7 +358,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   saveButton: {
     paddingHorizontal: 6,

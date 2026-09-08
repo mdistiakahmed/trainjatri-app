@@ -1,6 +1,7 @@
-import { Pressable, Platform } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { ThemedText } from '@/components/themed-text';
 
 interface SmartBackButtonProps {
   fallbackRoute?: string;
@@ -8,21 +9,37 @@ interface SmartBackButtonProps {
 
 export function SmartBackButton({ fallbackRoute = '/(tabs)' }: SmartBackButtonProps) {
   const handleBack = () => {
-    // Always navigate to the fallback route to ensure consistent behavior
-    // after tab reset
     router.navigate(fallbackRoute as any);
   };
 
   return (
     <Pressable
       onPress={handleBack}
-      style={{ marginLeft: Platform.OS === 'ios' ? 0 : 10 }}
+      hitSlop={8}
+      style={({ pressed }) => [styles.button, { opacity: pressed ? 0.7 : 1 }]}
     >
-      <IconSymbol
-        name="chevron.left"
-        size={24}
-        color="#007AFF"
-      />
+      <MaterialIcons name="arrow-back" size={22} color="#1877F2" />
+      <ThemedText style={styles.label}>Back</ThemedText>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 40,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#1877F2',
+    backgroundColor: '#fff',
+  },
+  label: {
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1877F2',
+  },
+});

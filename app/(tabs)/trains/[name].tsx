@@ -23,6 +23,7 @@ import {
   removeTrainFromQuickAccess,
 } from "@/utils/quickAccessStorage";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
+import { TrainBackButton } from "@/components/navigation/TrainBackButton";
 
 interface Route {
   city: string;
@@ -236,6 +237,9 @@ export default function TrainDetailScreen() {
           style={[styles.container, { backgroundColor: "transparent" }]}
         >
           <View style={styles.loadingContainer}>
+            <View style={styles.buttonSection}>
+              <TrainBackButton />
+            </View>
             <ActivityIndicator size="large" color={colors.tint} />
           </View>
         </ThemedView>
@@ -279,6 +283,7 @@ export default function TrainDetailScreen() {
       >
         <ScrollView style={styles.scrollView}>
           <View style={styles.buttonSection}>
+            <TrainBackButton />
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
@@ -410,7 +415,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   logo: {
     width: 150,
