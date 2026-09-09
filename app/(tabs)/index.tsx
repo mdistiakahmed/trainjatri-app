@@ -1,20 +1,31 @@
-import React from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   Pressable,
+  TextInput,
   ImageBackground,
 } from "react-native";
 import { Image } from "expo-image";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { uniqueTrainNames } from "@/utils/trainNames";
-import { Fonts } from "@/constants/theme";
+import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
+import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
+import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
+import {
+  createRouteUrlSlugFromStations,
+  formatStationNameForUrl,
+} from "@/utils/stringutils";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
+
+const PRIMARY_BLUE = "#1D61C4";
+const ACCENT_GREEN = "#2E9B4A";
 
 const majorStations = [
   "Dhaka",
@@ -29,15 +40,94 @@ const majorStations = [
   "Panchagarh",
 ];
 
-const stripBracketContent = (name: string) => {
-  return name.replace(/\s*\(.*?\)\s*/g, "").trim();
-};
+const stripBracketContent = (name: string) =>
+  name.replace(/\s*\(.*?\)\s*/g, "").trim();
+
+const stationNameToMappingKey = (name: string) =>
+  name.trim().replace(/\s+/g, "_");
+
+const getBengaliStationName = (englishName: string) =>
+  cityEnBnMapping[
+    stationNameToMappingKey(englishName) as keyof typeof cityEnBnMapping
+  ] || "";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const isDark = colorScheme === "dark";
+
+  const [fromStation, setFromStation] = useState("");
+  const [toStation, setToStation] = useState("");
+  const [showFromDropdown, setShowFromDropdown] = useState(false);
+  const [showToDropdown, setShowToDropdown] = useState(false);
+  const [fromFocused, setFromFocused] = useState(false);
+  const [toFocused, setToFocused] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const popularTrains = uniqueTrainNames.slice(0, 6);
+  const routes = useMemo(() => getRoutes(), []);
+  const groupedRoutes = useMemo(
+    () => groupRoutesByStartStation(routes),
+    [routes],
+  );
+  const stationGroups = useMemo(
+    () => Object.keys(groupedRoutes).sort(),
+    [groupedRoutes],
+  );
+
+  const filteredFromStations = stationGroups.filter((stationName) => {
+    if (!fromStation.trim()) return false;
+    const bengaliName = getBengaliStationName(stationName);
+    const query = fromStation.toLowerCase();
+    return (
+      stationName.toLowerCase().includes(query) ||
+      (bengaliName && bengaliName.includes(fromStation))
+    );
+  });
+
+  const availableToStations = useMemo(() => {
+    if (!fromStation.trim()) return [];
+    const selectedFromStation = stationGroups.find(
+      (station) =>
+        station.toLowerCase() === fromStation.toLowerCase() ||
+        getBengaliStationName(station) === fromStation,
+    );
+    if (!selectedFromStation) return [];
+    const fromRoutes = groupedRoutes[selectedFromStation] || [];
+    return fromRoutes.map((route) => route.route.split(" - ")[1]);
+  }, [fromStation, stationGroups, groupedRoutes]);
+
+  const filteredToStations = availableToStations.filter((stationName) => {
+    if (!toStation.trim()) return true;
+    const bengaliName = getBengaliStationName(stationName);
+    const query = toStation.toLowerCase();
+    return (
+      stationName.toLowerCase().includes(query) ||
+      (bengaliName && bengaliName.includes(toStation))
+    );
+  });
+
+  const handleFromStationSelect = (stationName: string) => {
+    setFromStation(stationName);
+    setShowFromDropdown(false);
+    setToStation("");
+  };
+
+  const handleToStationSelect = (stationName: string) => {
+    setToStation(stationName);
+    setShowToDropdown(false);
+  };
+
+  const handleSearchRoute = () => {
+    if (!fromStation) return;
+    const stationSlug = formatStationNameForUrl(fromStation);
+    if (toStation) {
+      const routeSlug = createRouteUrlSlugFromStations(fromStation, toStation);
+      router.push(`/(tabs)/stations/${stationSlug}/${routeSlug}` as any);
+    } else {
+      router.push(`/(tabs)/stations/${stationSlug}` as any);
+    }
+  };
 
   const handleTrainPress = (trainName: string) => {
     const cleanName = stripBracketContent(trainName);
@@ -50,229 +140,382 @@ export default function HomeScreen() {
     router.push(`/(tabs)/stations/${urlSlug}`);
   };
 
+  const handlePopularRoutes = () => {
+    const stationSlug = formatStationNameForUrl("Dhaka");
+    const routeSlug = createRouteUrlSlugFromStations("Dhaka", "Chattogram");
+    router.push(`/(tabs)/stations/${stationSlug}/${routeSlug}` as any);
+  };
+
+  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
+  const fieldBg = isDark ? "#2a2a2a" : "#f7f8fa";
+
+  const renderStationField = (
+    label: string,
+    placeholder: string,
+    value: string,
+    onChange: (text: string) => void,
+    focused: boolean,
+    setFocused: (v: boolean) => void,
+    showDropdown: boolean,
+    suggestions: string[],
+    onSelect: (name: string) => void,
+    zIndex: number,
+    editable = true,
+    onFocusExtra?: () => void,
+  ) => (
+    <View style={[styles.fieldWrap, { zIndex }]}>
+      <Pressable
+        style={[
+          styles.stationField,
+          {
+            backgroundColor: fieldBg,
+            borderColor: focused ? PRIMARY_BLUE : "transparent",
+            borderWidth: focused ? 2 : 0,
+            opacity: editable ? 1 : 0.55,
+          },
+        ]}
+        onPress={() => {
+          if (!editable) return;
+          setFocused(true);
+          onFocusExtra?.();
+          if (value.trim() || suggestions.length) {
+            /* dropdown handled by input focus */
+          }
+        }}
+      >
+        <View style={styles.pinCircle}>
+          <MaterialIcons name="location-on" size={18} color={PRIMARY_BLUE} />
+        </View>
+        <View style={styles.fieldTextWrap}>
+          <ThemedText style={styles.fieldLabel}>{label}</ThemedText>
+          <TextInput
+            style={[styles.fieldInput, { color: colors.text }]}
+            placeholder={placeholder}
+            placeholderTextColor={isDark ? "#888" : "#9aa3af"}
+            value={value}
+            editable={editable}
+            onChangeText={(text) => {
+              onChange(text);
+            }}
+            onFocus={() => {
+              setFocused(true);
+              onFocusExtra?.();
+            }}
+            onBlur={() => setFocused(false)}
+          />
+        </View>
+        <MaterialIcons name="chevron-right" size={22} color="#b0b7c3" />
+      </Pressable>
+      {showDropdown && suggestions.length > 0 && (
+        <View
+          style={[
+            styles.dropdown,
+            { backgroundColor: "#fff", borderColor: PRIMARY_BLUE },
+          ]}
+        >
+          <ScrollView
+            style={styles.dropdownScroll}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="always"
+          >
+            {suggestions.map((stationName) => {
+              const bengaliName = getBengaliStationName(stationName);
+              return (
+                <Pressable
+                  key={stationName}
+                  style={({ pressed }) => [
+                    styles.dropdownItem,
+                    { backgroundColor: pressed ? "#e8f4ff" : "#fff" },
+                  ]}
+                  onPress={() => onSelect(stationName)}
+                >
+                  <ThemedText
+                    style={[styles.dropdownItemText, { color: "#111" }]}
+                  >
+                    {stationName}
+                  </ThemedText>
+                  {bengaliName ? (
+                    <ThemedText
+                      style={[styles.dropdownItemTextBn, { color: "#666" }]}
+                    >
+                      {bengaliName}
+                    </ThemedText>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <ImageBackground
       source={require("@/assets/images/snowflakes.png")}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView
-        style={[styles.container, { backgroundColor: "transparent" }]}
+    <ThemedView style={[styles.container, { backgroundColor: "transparent" }]}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView style={styles.scrollView}>
-          {/* Hero Section */}
-          <View style={styles.heroSection}>
-            <ThemedText
-              type="title"
-              style={[styles.heroTitle, { fontFamily: Fonts.rounded }]}
-            >
-              Your Complete Bangladesh Railway Guide
-            </ThemedText>
-            <ThemedText style={styles.heroSubtitle}>
-              Find train schedules, book tickets, and get real-time updates for
-              all major train routes across Bangladesh.
-            </ThemedText>
+        <View style={styles.heroWrap}>
+          <View style={styles.hero}>
             <Image
               source={require("@/assets/images/logo.png")}
-              style={styles.logo}
+              style={styles.heroLogo}
               contentFit="contain"
             />
           </View>
+        </View>
 
-          {/* Quick Access Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Quick Access</ThemedText>
-            <View style={styles.quickAccessGrid}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.quickAccessCard,
-                  styles.blueCard,
-                  {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#1e3a5f" : "#eff6ff",
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-                onPress={() => router.push("/(tabs)/trains")}
-              >
-                <ThemedText
-                  style={[
-                    styles.quickAccessTitle,
-                    { color: colorScheme === "dark" ? "#93c5fd" : "#1e40af" },
-                  ]}
-                >
-                  Train Schedules
-                </ThemedText>
-                <ThemedText style={styles.quickAccessDescription}>
-                  Find schedules by train name or number across all routes.
-                </ThemedText>
-              </Pressable>
+        <View style={[styles.searchCard, { backgroundColor: cardBg }]}>
+          {renderStationField(
+            "From / যাত্রা শুরু",
+            "Select station",
+            fromStation,
+            (text) => {
+              setFromStation(text);
+              setShowFromDropdown(text.trim().length > 0);
+              setShowToDropdown(false);
+            },
+            fromFocused,
+            setFromFocused,
+            showFromDropdown,
+            filteredFromStations,
+            handleFromStationSelect,
+            3,
+            true,
+            () => {
+              setShowToDropdown(false);
+              if (fromStation.trim()) setShowFromDropdown(true);
+            },
+          )}
 
-              <Pressable
-                style={({ pressed }) => [
-                  styles.quickAccessCard,
-                  styles.greenCard,
-                  {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#1e4d3f" : "#f0fdf4",
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-                onPress={() => router.push("/(tabs)/stations")}
-              >
-                <ThemedText
-                  style={[
-                    styles.quickAccessTitle,
-                    { color: colorScheme === "dark" ? "#86efac" : "#166534" },
-                  ]}
-                >
-                  Station Schedules
-                </ThemedText>
-                <ThemedText style={styles.quickAccessDescription}>
-                  View all train schedules for major railway stations.
-                </ThemedText>
-              </Pressable>
+          <View style={styles.fieldDivider} />
 
-              <Pressable
-                style={({ pressed }) => [
-                  styles.quickAccessCard,
-                  styles.redCard,
-                  {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#4d1e1e" : "#fef2f2",
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-                onPress={() => router.push("/(tabs)/live-tracking")}
-              >
-                <ThemedText
-                  style={[
-                    styles.quickAccessTitle,
-                    { color: colorScheme === "dark" ? "#fca5a5" : "#991b1b" },
-                  ]}
-                >
-                  Live Train Tracking
-                </ThemedText>
-                <ThemedText style={styles.quickAccessDescription}>
-                  Track trains in real-time and get live updates on status.
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
+          {renderStationField(
+            "To / গন্তব্য",
+            "Select station",
+            toStation,
+            (text) => {
+              setToStation(text);
+              setShowToDropdown(fromStation.trim().length > 0);
+              setShowFromDropdown(false);
+            },
+            toFocused,
+            setToFocused,
+            showToDropdown && !!fromStation,
+            filteredToStations,
+            handleToStationSelect,
+            2,
+            !!fromStation,
+            () => {
+              setShowFromDropdown(false);
+              if (fromStation.trim()) setShowToDropdown(true);
+            },
+          )}
 
-          {/* Ad Placeholder */}
-          <AdPlaceholder />
+          <Pressable
+            style={({ pressed }) => [
+              styles.searchButton,
+              {
+                backgroundColor: fromStation ? PRIMARY_BLUE : "#9bb7df",
+                opacity: pressed && fromStation ? 0.85 : 1,
+              },
+            ]}
+            onPress={handleSearchRoute}
+            disabled={!fromStation}
+          >
+            <MaterialIcons name="search" size={20} color="#fff" />
+            <ThemedText style={styles.searchButtonText}>
+              View Trains
+            </ThemedText>
+          </Pressable>
+        </View>
 
-          {/* Popular Trains Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>
-                Popular Trains
+        <View style={styles.quickRow}>
+          <QuickAction
+            label="Train Schedule"
+            labelBn="ট্রেন সময়সূচি"
+            icon="train"
+            bg="#E7F1FF"
+            iconColor={PRIMARY_BLUE}
+            onPress={() => router.push("/(tabs)/trains")}
+          />
+          <QuickAction
+            label="Stations"
+            labelBn="স্টেশন"
+            icon="place"
+            bg="#E6F7EA"
+            iconColor={ACCENT_GREEN}
+            onPress={() => router.push("/(tabs)/stations")}
+          />
+          <QuickAction
+            label="Live Updates"
+            labelBn="লাইভ আপডেট"
+            icon="schedule"
+            bg="#EFE8FF"
+            iconColor="#7B5EA7"
+            onPress={() => router.push("/(tabs)/live-tracking")}
+          />
+          <QuickAction
+            label="Popular Routes"
+            labelBn="জনপ্রিয় রুট"
+            icon="star"
+            bg="#FFE8D6"
+            iconColor="#E07A2F"
+            onPress={handlePopularRoutes}
+          />
+        </View>
+
+        <AdPlaceholder />
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>
+              Popular Trains
+            </ThemedText>
+            <Pressable onPress={() => router.push("/(tabs)/trains")}>
+              <ThemedText style={styles.viewAllLink}>
+                View All →
               </ThemedText>
-              <Pressable onPress={() => router.push("/(tabs)/trains")}>
-                <ThemedText style={styles.viewAllLink}>View All →</ThemedText>
-              </Pressable>
-            </View>
-            <View style={styles.trainsGrid}>
-              {popularTrains.map((trainName) => {
-                const cleanName = stripBracketContent(trainName);
-                return (
-                  <Pressable
-                    key={trainName}
-                    style={({ pressed }) => [
-                      styles.trainCard,
-                      {
-                        backgroundColor:
-                          colorScheme === "dark" ? "#2a2a2a" : "#fff",
-                        opacity: pressed ? 0.7 : 1,
-                      },
-                    ]}
-                    onPress={() => handleTrainPress(trainName)}
-                  >
-                    <ThemedText style={styles.trainName}>
-                      {cleanName}
-                    </ThemedText>
-                    <ThemedText style={styles.trainDescription}>
-                      View schedule, stops, and booking information.
-                    </ThemedText>
-                    <View style={styles.trainFooter}>
-                      <ThemedText style={styles.viewScheduleText}>
-                        View Schedule →
-                      </ThemedText>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
+            </Pressable>
           </View>
-
-          {/* Ad Placeholder */}
-          <AdPlaceholder />
-
-          {/* Major Stations Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>
-                Major Railway Stations
-              </ThemedText>
-              <Pressable onPress={() => router.push("/(tabs)/stations")}>
-                <ThemedText style={styles.viewAllLink}>View All →</ThemedText>
+          {popularTrains.map((trainName) => {
+            const cleanName = stripBracketContent(trainName);
+            const trainNameBn =
+              trainNameEnBnMapping[
+                cleanName as keyof typeof trainNameEnBnMapping
+              ];
+            return (
+              <Pressable
+                key={trainName}
+                style={({ pressed }) => [
+                  styles.listCard,
+                  { backgroundColor: cardBg, opacity: pressed ? 0.75 : 1 },
+                ]}
+                onPress={() => handleTrainPress(trainName)}
+              >
+                <View style={styles.listIconWrap}>
+                  <MaterialIcons name="train" size={20} color={PRIMARY_BLUE} />
+                </View>
+                <View style={styles.listCardText}>
+                  <ThemedText style={styles.listCardTitle}>
+                    {cleanName}
+                  </ThemedText>
+                  {trainNameBn ? (
+                    <ThemedText style={styles.listCardBn}>
+                      {trainNameBn}
+                    </ThemedText>
+                  ) : null}
+                </View>
+                <ThemedText style={styles.listCardLink}>
+                  View →
+                </ThemedText>
               </Pressable>
-            </View>
-            <View style={styles.stationsGrid}>
-              {majorStations.map((station) => (
+            );
+          })}
+        </View>
+
+        <AdPlaceholder />
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>
+              Major Stations
+            </ThemedText>
+            <Pressable onPress={() => router.push("/(tabs)/stations")}>
+              <ThemedText style={styles.viewAllLink}>
+                View All →
+              </ThemedText>
+            </Pressable>
+          </View>
+          <View style={styles.stationsGrid}>
+            {majorStations.map((station) => {
+              const stationBn = getBengaliStationName(station);
+              return (
                 <Pressable
                   key={station}
                   style={({ pressed }) => [
                     styles.stationCard,
-                    {
-                      backgroundColor:
-                        colorScheme === "dark" ? "#2a2a2a" : "#fff",
-                      opacity: pressed ? 0.7 : 1,
-                    },
+                    { backgroundColor: cardBg, opacity: pressed ? 0.75 : 1 },
                   ]}
                   onPress={() => handleStationPress(station)}
                 >
-                  <ThemedText style={styles.stationName}>
-                    {station} Station
-                  </ThemedText>
-                  <ThemedText style={styles.stationSubtext}>
-                    View all trains
-                  </ThemedText>
+                  <MaterialIcons
+                    name="location-on"
+                    size={18}
+                    color={ACCENT_GREEN}
+                  />
+                  <ThemedText style={styles.stationName}>{station}</ThemedText>
+                  {stationBn ? (
+                    <ThemedText style={styles.stationNameBn}>
+                      {stationBn}
+                    </ThemedText>
+                  ) : null}
+                <ThemedText style={styles.stationSubtext}>
+                  View trains
+                </ThemedText>
                 </Pressable>
-              ))}
-            </View>
+              );
+            })}
           </View>
+        </View>
 
-          {/* Disclaimer Section */}
-          <View style={styles.disclaimerSection}>
-            <ThemedText style={styles.disclaimerTitle}>
-              About Our Data
-            </ThemedText>
-            <ThemedText style={styles.disclaimerText}>
-              At Train Jatri, we are committed to providing accurate and
-              up-to-date train schedule information. Our data is collected from
-              official Bangladesh Railway sources.
-            </ThemedText>
-            <ThemedText style={styles.disclaimerText}>
-              We update our database regularly, typically every month. However,
-              train schedules may change due to maintenance, weather, or
-              operational requirements.
-            </ThemedText>
-            <ThemedText style={styles.disclaimerText}>
-              While we strive for accuracy, we recommend cross-verifying
-              important travel information with official Bangladesh Railway
-              sources before making travel arrangements.
-            </ThemedText>
-            <ThemedText style={styles.lastUpdated}>
-              Last updated: 24th August, 2026
-            </ThemedText>
-          </View>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      </ThemedView>
+        <View style={styles.disclaimerSection}>
+          <ThemedText style={styles.disclaimerTitle}>
+            About Our Data
+          </ThemedText>
+          <ThemedText style={styles.disclaimerText}>
+            At Train Jatri, we are committed to providing accurate and
+            up-to-date train schedule information. Our data is collected from
+            official Bangladesh Railway sources.
+          </ThemedText>
+          <ThemedText style={styles.lastUpdated}>
+            Last updated: 24th August, 2026
+          </ThemedText>
+        </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </ThemedView>
     </ImageBackground>
+  );
+}
+
+function QuickAction({
+  label,
+  labelBn,
+  icon,
+  bg,
+  iconColor,
+  onPress,
+}: {
+  label: string;
+  labelBn: string;
+  icon: React.ComponentProps<typeof MaterialIcons>["name"];
+  bg: string;
+  iconColor: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.quickItem,
+        { opacity: pressed ? 0.75 : 1 },
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.quickCircle, { backgroundColor: bg }]}>
+        <MaterialIcons name={icon} size={26} color={iconColor} />
+      </View>
+      <ThemedText style={styles.quickLabel}>{label}</ThemedText>
+      <ThemedText style={styles.quickLabelBn}>{labelBn}</ThemedText>
+    </Pressable>
   );
 }
 
@@ -289,161 +532,257 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  heroSection: {
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
+  heroWrap: {
+    overflow: "hidden",
+    backgroundColor: "transparent",
+  },
+  hero: {
+    height: 280,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  heroLogo: {
+    width: "120%",
+    height: 300,
+    transform: [{ scale: 0.75 }],
+  },
+  searchCard: {
+    marginHorizontal: 16,
+    marginTop: -42,
+    borderRadius: 22,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 4,
+  },
+  fieldWrap: {
+    position: "relative",
+  },
+  stationField: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  pinCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E7F1FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  fieldTextWrap: {
+    flex: 1,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    color: "#8a94a6",
+    fontWeight: "600",
+  },
+  fieldInput: {
+    fontSize: 15,
+    fontWeight: "600",
+    paddingVertical: 2,
+    paddingHorizontal: 0,
+  },
+  fieldDivider: {
+    height: 1,
+    backgroundColor: "#eceff3",
+    marginVertical: 8,
+    marginLeft: 56,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 64,
+    left: 0,
+    right: 0,
+    borderWidth: 2,
+    borderRadius: 12,
+    maxHeight: 200,
+    zIndex: 20,
+    elevation: 12,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  dropdownItemTextBn: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  searchButton: {
+    marginTop: 14,
+    borderRadius: 14,
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  searchButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  quickRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    marginTop: 22,
+    marginBottom: 12,
+  },
+  quickItem: {
+    width: "23%",
     alignItems: "center",
   },
-  logo: {
-    width: 200,
-    height: 100,
-    marginBottom: 16,
+  quickCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
-  heroTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
+  quickLabel: {
+    fontSize: 11,
+    fontWeight: "700",
     textAlign: "center",
-    marginBottom: 16,
-    lineHeight: 40,
+    lineHeight: 14,
   },
-  heroSubtitle: {
-    fontSize: 16,
+  quickLabelBn: {
+    fontSize: 10,
+    fontWeight: "600",
     textAlign: "center",
-    opacity: 0.8,
-    lineHeight: 24,
+    opacity: 0.7,
+    marginTop: 2,
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "800",
   },
   viewAllLink: {
-    fontSize: 16,
-    color: "#4f46e5",
-    fontWeight: "600",
+    fontSize: 14,
+    color: PRIMARY_BLUE,
+    fontWeight: "700",
   },
-  quickAccessGrid: {
-    gap: 12,
-  },
-  quickAccessCard: {
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  blueCard: {
-    borderColor: "#dbeafe",
-  },
-  greenCard: {
-    borderColor: "#dcfce7",
-  },
-  redCard: {
-    borderColor: "#fee2e2",
-  },
-  quickAccessTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  quickAccessDescription: {
-    fontSize: 15,
-    opacity: 0.8,
-    lineHeight: 22,
-  },
-  trainsGrid: {
-    gap: 12,
-  },
-  trainCard: {
-    padding: 20,
-    borderRadius: 12,
+  listCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
+    elevation: 2,
   },
-  trainName: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
+  listIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E7F1FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  listCardText: {
+    flex: 1,
+  },
+  listCardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
     textTransform: "capitalize",
   },
-  trainDescription: {
-    fontSize: 15,
+  listCardBn: {
+    fontSize: 13,
     opacity: 0.7,
-    marginBottom: 12,
-    lineHeight: 22,
+    marginTop: 2,
   },
-  trainFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  viewScheduleText: {
-    fontSize: 15,
-    color: "#4f46e5",
-    fontWeight: "600",
+  listCardLink: {
+    fontSize: 12,
+    color: PRIMARY_BLUE,
+    fontWeight: "700",
   },
   stationsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 10,
   },
   stationCard: {
     width: "48%",
-    padding: 16,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 16,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
   },
   stationName: {
     fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 4,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  stationNameBn: {
+    fontSize: 13,
+    opacity: 0.7,
+    marginTop: 2,
   },
   stationSubtext: {
-    fontSize: 13,
-    opacity: 0.6,
+    fontSize: 12,
+    opacity: 0.55,
+    marginTop: 2,
   },
   disclaimerSection: {
     paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e5e5",
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   disclaimerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 8,
   },
   disclaimerText: {
-    fontSize: 14,
-    opacity: 0.8,
-    lineHeight: 22,
-    marginBottom: 12,
+    fontSize: 13,
+    opacity: 0.75,
+    lineHeight: 20,
   },
   lastUpdated: {
     fontSize: 12,
-    opacity: 0.6,
+    opacity: 0.5,
     marginTop: 8,
   },
 });
