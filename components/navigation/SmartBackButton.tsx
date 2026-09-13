@@ -11,7 +11,7 @@ export function SmartBackButton({
   fallbackRoute = "/(tabs)",
 }: SmartBackButtonProps) {
   const handleBack = () => {
-    router.navigate(fallbackRoute as any);
+    router.replace(fallbackRoute as any);
   };
 
   return (

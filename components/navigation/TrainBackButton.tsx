@@ -8,9 +8,9 @@ export function TrainBackButton() {
 
   const handleBack = () => {
     if (params.from === "station-route" && params.returnTo) {
-      router.push(params.returnTo as any);
+      router.replace(params.returnTo as any);
     } else {
-      router.navigate("/(tabs)/trains");
+      router.replace("/(tabs)/trains");
     }
   };
 
