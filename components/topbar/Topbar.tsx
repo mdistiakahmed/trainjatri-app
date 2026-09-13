@@ -10,7 +10,8 @@ import {
   Linking,
   Animated,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, usePathname } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   getSavedTrains,
   getSavedStations,
@@ -23,15 +24,84 @@ import {
 } from "@/utils/quickAccessStorage";
 import { BLUE_ACTIVE } from "@/constants/theme";
 
+const TEXT = "#202124";
+const ICON = "#5f6368";
+const MUTED = "#5f6368";
+const DIVIDER = "#e8eaed";
+const ROW_PRESSED = "#f1f3f4";
+const ROW_ACTIVE_BG = "#e8f0fe";
+
+type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
+
+function MenuRow({
+  icon,
+  label,
+  sublabel,
+  active = false,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  sublabel?: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.menuRow,
+        active && styles.menuRowActive,
+        pressed && !active && styles.menuRowPressed,
+      ]}
+    >
+      <MaterialIcons
+        name={icon}
+        size={22}
+        color={active ? BLUE_ACTIVE : ICON}
+        style={styles.menuRowIcon}
+      />
+      <View style={styles.menuRowTextWrap}>
+        <Text
+          style={[styles.menuRowLabel, active && styles.menuRowLabelActive]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+        {sublabel ? (
+          <Text style={styles.menuRowSublabel} numberOfLines={1}>
+            {sublabel}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return <Text style={styles.sectionLabel}>{children}</Text>;
+}
+
+function EmptyHint({ children }: { children: string }) {
+  return <Text style={styles.emptyHint}>{children}</Text>;
+}
+
 export default function Topbar() {
+  const pathname = usePathname();
   const [menuVisible, setMenuVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-300)).current;
+  const slideAnim = useRef(new Animated.Value(-304)).current;
   const [savedTrains, setSavedTrains] = useState<SavedTrain[]>([]);
   const [savedStations, setSavedStations] = useState<SavedStation[]>([]);
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
   const [savedLiveTrackings, setSavedLiveTrackings] = useState<
     SavedLiveTracking[]
   >([]);
+
+  const isHome =
+    pathname === "/" || pathname === "/index" || pathname === "/(tabs)";
+  const isTrains = pathname.startsWith("/trains");
+  const isStations = pathname.startsWith("/stations");
+  const isLiveTracking = pathname.startsWith("/live-tracking");
 
   const loadSavedItems = async () => {
     const trains = await getSavedTrains();
@@ -54,40 +124,42 @@ export default function Topbar() {
 
   useEffect(() => {
     loadSavedItems();
-  }, []); // Start off-screen to the left
+  }, []);
 
   useEffect(() => {
     if (menuVisible) {
-      // Slide in from left
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 280,
         useNativeDriver: true,
       }).start();
     } else {
-      // Slide out to left
       Animated.timing(slideAnim, {
-        toValue: -300,
-        duration: 250,
+        toValue: -304,
+        duration: 220,
         useNativeDriver: true,
       }).start();
     }
   }, [menuVisible]);
 
+  const closeAnd = (action: () => void) => {
+    setMenuVisible(false);
+    action();
+  };
+
   const handleLogoPress = () => {
-    // Use navigate to go to home tab root and clear history
     router.navigate("/(tabs)");
   };
 
   const handleShareFeedback = () => {
-    setMenuVisible(false);
-    // Open email client for feedback
-    const email = "randzyx62@gmail.com";
-    const subject = "Feedback for Train Jatri App";
-    const body = "Please share your feedback here...";
-    Linking.openURL(
-      `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-    );
+    closeAnd(() => {
+      const email = "randzyx62@gmail.com";
+      const subject = "Feedback for Train Jatri App";
+      const body = "Please share your feedback here...";
+      Linking.openURL(
+        `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      );
+    });
   };
 
   return (
@@ -121,7 +193,6 @@ export default function Topbar() {
         <View style={styles.placeholder} />
       </View>
 
-      {/* Side Menu Modal */}
       <Modal
         visible={menuVisible}
         transparent
@@ -135,211 +206,142 @@ export default function Topbar() {
           <Animated.View
             style={[
               styles.menuContainer,
-              {
-                backgroundColor: "#ffffff",
-                transform: [{ translateX: slideAnim }],
-              },
+              { transform: [{ translateX: slideAnim }] },
             ]}
           >
-            <Pressable style={{ flex: 1 }} onPress={(e) => e.stopPropagation()}>
+            <Pressable style={styles.menuInner} onPress={(e) => e.stopPropagation()}>
               <View style={styles.menuHeader}>
-                <View style={styles.menuLogoContainer}>
-                  <Text style={styles.menuLogoMain}>
-                    TrainJatri
-                  </Text>
-                  <Text style={styles.menuLogoDomain}>.com</Text>
-                </View>
-                <Pressable
-                  onPress={() => setMenuVisible(false)}
-                  style={({ pressed }) => [
-                    styles.closeButton,
-                    { opacity: pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  <Text style={styles.closeButtonText}>✕</Text>
-                </Pressable>
+                <MaterialIcons name="train" size={28} color={BLUE_ACTIVE} />
+                <Text style={styles.menuBrand}>TrainJatri</Text>
               </View>
 
-              <ScrollView style={styles.menuContent}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.menuItem,
-                    {
-                      backgroundColor: pressed
-                        ? "#f5f5f5"
-                        : "transparent",
-                    },
-                  ]}
+              <View style={styles.headerDivider} />
+
+              <ScrollView
+                style={styles.menuContent}
+                contentContainerStyle={styles.menuContentInner}
+                showsVerticalScrollIndicator={false}
+              >
+                <MenuRow
+                  icon="home"
+                  label="Home"
+                  active={isHome}
+                  onPress={() => closeAnd(() => router.navigate("/(tabs)"))}
+                />
+                <MenuRow
+                  icon="train"
+                  label="Trains"
+                  active={isTrains}
+                  onPress={() =>
+                    closeAnd(() => router.navigate("/(tabs)/trains"))
+                  }
+                />
+                <MenuRow
+                  icon="map"
+                  label="Stations"
+                  active={isStations}
+                  onPress={() =>
+                    closeAnd(() => router.navigate("/(tabs)/stations"))
+                  }
+                />
+                <MenuRow
+                  icon="my-location"
+                  label="Live Tracking"
+                  active={isLiveTracking}
+                  onPress={() =>
+                    closeAnd(() => router.navigate("/(tabs)/live-tracking"))
+                  }
+                />
+
+                <View style={styles.sectionDivider} />
+                <SectionLabel>Quick access</SectionLabel>
+
+                <SectionLabel>Trains</SectionLabel>
+                {savedTrains.length > 0 ? (
+                  savedTrains.map((train) => (
+                    <MenuRow
+                      key={train.slug}
+                      icon="directions-railway"
+                      label={train.name}
+                      onPress={() =>
+                        closeAnd(() =>
+                          router.push(`/(tabs)/trains/${train.slug}` as any),
+                        )
+                      }
+                    />
+                  ))
+                ) : (
+                  <EmptyHint>No saved trains</EmptyHint>
+                )}
+
+                <SectionLabel>Stations</SectionLabel>
+                {savedStations.length > 0 ? (
+                  savedStations.map((station) => (
+                    <MenuRow
+                      key={station.slug}
+                      icon="place"
+                      label={station.name}
+                      onPress={() =>
+                        closeAnd(() =>
+                          router.push(`/(tabs)/stations/${station.slug}` as any),
+                        )
+                      }
+                    />
+                  ))
+                ) : (
+                  <EmptyHint>No saved stations</EmptyHint>
+                )}
+
+                <SectionLabel>Routes</SectionLabel>
+                {savedRoutes.length > 0 ? (
+                  savedRoutes.map((route) => (
+                    <MenuRow
+                      key={route.slug}
+                      icon="alt-route"
+                      label={`${route.from} → ${route.to}`}
+                      onPress={() => {
+                        const stationSlug = route.from
+                          .toLowerCase()
+                          .replace(/\s+/g, "-");
+                        closeAnd(() =>
+                          router.push(
+                            `/(tabs)/stations/${stationSlug}/${route.slug}` as any,
+                          ),
+                        );
+                      }}
+                    />
+                  ))
+                ) : (
+                  <EmptyHint>No saved routes</EmptyHint>
+                )}
+
+                <SectionLabel>Live tracking</SectionLabel>
+                {savedLiveTrackings.length > 0 ? (
+                  savedLiveTrackings.map((tracking) => (
+                    <MenuRow
+                      key={tracking.trainName}
+                      icon="near-me"
+                      label={tracking.trainName}
+                      sublabel={tracking.trainNameBn}
+                      onPress={() =>
+                        closeAnd(() =>
+                          router.push(
+                            `/(tabs)/live-tracking?trainName=${encodeURIComponent(tracking.trainName)}` as any,
+                          ),
+                        )
+                      }
+                    />
+                  ))
+                ) : (
+                  <EmptyHint>No saved live tracking</EmptyHint>
+                )}
+
+                <View style={styles.sectionDivider} />
+                <MenuRow
+                  icon="feedback"
+                  label="Send feedback"
                   onPress={handleShareFeedback}
-                >
-                  <Text style={styles.menuItemText}>
-                    📝 Share Feedback
-                  </Text>
-                </Pressable>
-
-                <View style={styles.menuDivider} />
-
-                {/* Quick Access Section */}
-                <View style={styles.quickAccessSection}>
-                  <Text style={styles.sectionTitle}>
-                    Quick Access
-                  </Text>
-                  <View style={styles.sectionDivider} />
-
-                  {/* Saved Trains */}
-                  <View style={styles.subSection}>
-                    <Text style={styles.subSectionTitle}>
-                      🚂 Saved Trains
-                    </Text>
-                    <View style={styles.subSectionDivider} />
-                    {savedTrains.length > 0 ? (
-                      savedTrains.map((train) => (
-                        <Pressable
-                          key={train.slug}
-                          style={({ pressed }) => [
-                            styles.quickAccessItem,
-                            {
-                              backgroundColor: pressed
-                                ? "#f5f5f5"
-                                : "transparent",
-                            },
-                          ]}
-                          onPress={() => {
-                            setMenuVisible(false);
-                            router.push(`/(tabs)/trains/${train.slug}` as any);
-                          }}
-                        >
-                          <Text style={styles.quickAccessItemText}>
-                            {train.name}
-                          </Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.emptySubsectionText}>
-                        No saved trains yet
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Saved Stations */}
-                  <View style={styles.subSection}>
-                    <Text style={styles.subSectionTitle}>
-                      📍 Saved Stations
-                    </Text>
-                    <View style={styles.subSectionDivider} />
-                    {savedStations.length > 0 ? (
-                      savedStations.map((station) => (
-                        <Pressable
-                          key={station.slug}
-                          style={({ pressed }) => [
-                            styles.quickAccessItem,
-                            {
-                              backgroundColor: pressed
-                                ? "#f5f5f5"
-                                : "transparent",
-                            },
-                          ]}
-                          onPress={() => {
-                            setMenuVisible(false);
-                            router.push(
-                              `/(tabs)/stations/${station.slug}` as any,
-                            );
-                          }}
-                        >
-                          <Text style={styles.quickAccessItemText}>
-                            {station.name}
-                          </Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.emptySubsectionText}>
-                        No saved stations yet
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Saved Routes */}
-                  <View style={styles.subSection}>
-                    <Text style={styles.subSectionTitle}>
-                      🛤️ Saved Routes
-                    </Text>
-                    <View style={styles.subSectionDivider} />
-                    {savedRoutes.length > 0 ? (
-                      savedRoutes.map((route) => (
-                        <Pressable
-                          key={route.slug}
-                          style={({ pressed }) => [
-                            styles.quickAccessItem,
-                            {
-                              backgroundColor: pressed
-                                ? "#f5f5f5"
-                                : "transparent",
-                            },
-                          ]}
-                          onPress={() => {
-                            setMenuVisible(false);
-                            const stationSlug = route.from
-                              .toLowerCase()
-                              .replace(/\s+/g, "-");
-                            router.push(
-                              `/(tabs)/stations/${stationSlug}/${route.slug}` as any,
-                            );
-                          }}
-                        >
-                          <Text style={styles.quickAccessItemText}>
-                            {route.from} → {route.to}
-                          </Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.emptySubsectionText}>
-                        No saved routes yet
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Saved Live Tracking */}
-                  <View style={styles.subSection}>
-                    <Text style={styles.subSectionTitle}>
-                      📍 Live Tracking
-                    </Text>
-                    <View style={styles.subSectionDivider} />
-                    {savedLiveTrackings.length > 0 ? (
-                      savedLiveTrackings.map((tracking) => (
-                        <Pressable
-                          key={tracking.trainName}
-                          style={({ pressed }) => [
-                            styles.quickAccessItem,
-                            {
-                              backgroundColor: pressed
-                                ? "#f5f5f5"
-                                : "transparent",
-                            },
-                          ]}
-                          onPress={() => {
-                            setMenuVisible(false);
-                            router.push(
-                              `/(tabs)/live-tracking?trainName=${encodeURIComponent(tracking.trainName)}` as any,
-                            );
-                          }}
-                        >
-                          <Text style={styles.quickAccessItemText}>
-                            {tracking.trainName}
-                          </Text>
-                          {tracking.trainNameBn && (
-                            <Text style={styles.quickAccessItemSubtext}>
-                              {tracking.trainNameBn}
-                            </Text>
-                          )}
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.emptySubsectionText}>
-                        No saved live tracking yet
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                />
               </ScrollView>
             </Pressable>
           </Animated.View>
@@ -410,152 +412,106 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.32)",
     justifyContent: "flex-start",
   },
   menuContainer: {
     backgroundColor: "#ffffff",
-    width: "80%",
-    maxWidth: 300,
+    width: "86%",
+    maxWidth: 304,
     height: "100%",
     shadowColor: "#000",
     shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 16,
+  },
+  menuInner: {
+    flex: 1,
   },
   menuHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
+    paddingTop: Platform.OS === "ios" ? 56 : 28,
+    paddingBottom: 16,
+    gap: 12,
   },
-  menuLogoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  menuBrand: {
+    fontSize: 22,
+    fontWeight: "400",
+    color: TEXT,
+    letterSpacing: 0.15,
   },
-  menuLogoMain: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#dc2626",
-  },
-  menuLogoDomain: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#6b7280",
-  },
-  menuTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButtonText: {
-    fontSize: 24,
-    fontWeight: "300",
-    color: "#11181C",
+  headerDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: DIVIDER,
+    marginBottom: 8,
   },
   menuContent: {
     flex: 1,
-    paddingTop: 20,
   },
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginHorizontal: 12,
-    marginBottom: 8,
+  menuContentInner: {
+    paddingBottom: 28,
   },
-  disabledMenuItem: {
-    opacity: 0.5,
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 48,
+    paddingVertical: 10,
+    paddingLeft: 20,
+    paddingRight: 16,
+    marginRight: 12,
+    borderTopRightRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  menuItemText: {
-    fontSize: 16,
+  menuRowActive: {
+    backgroundColor: ROW_ACTIVE_BG,
+  },
+  menuRowPressed: {
+    backgroundColor: ROW_PRESSED,
+  },
+  menuRowIcon: {
+    marginRight: 18,
+  },
+  menuRowTextWrap: {
+    flex: 1,
+  },
+  menuRowLabel: {
+    fontSize: 14,
     fontWeight: "500",
-    color: "#11181C",
+    color: TEXT,
+    textTransform: "capitalize",
   },
-  disabledText: {
-    opacity: 0.6,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: "#e5e5e5",
-    marginVertical: 16,
-    marginHorizontal: 20,
-  },
-  quickAccessSection: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+  menuRowLabelActive: {
     color: BLUE_ACTIVE,
+    fontWeight: "600",
+  },
+  menuRowSublabel: {
+    fontSize: 12,
+    color: MUTED,
+    marginTop: 2,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
     paddingHorizontal: 20,
-    marginBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 6,
   },
   sectionDivider: {
-    height: 2,
-    backgroundColor: BLUE_ACTIVE,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: DIVIDER,
+    marginVertical: 8,
+    marginLeft: 20,
   },
-  subSection: {
-    marginBottom: 20,
-  },
-  subSectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: BLUE_ACTIVE,
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  subSectionDivider: {
-    height: 1,
-    backgroundColor: BLUE_ACTIVE,
-    marginHorizontal: 20,
-    marginBottom: 12,
-  },
-  quickAccessItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginHorizontal: 12,
-    marginBottom: 4,
-  },
-  quickAccessItemText: {
-    fontSize: 15,
-    textTransform: "capitalize",
-    color: "#11181C",
-  },
-  quickAccessItemSubtext: {
+  emptyHint: {
     fontSize: 13,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  emptySubsectionText: {
-    fontSize: 13,
-    color: "#6b7280",
-    fontStyle: "italic",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  emptyState: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: 14,
-    opacity: 0.6,
-    textAlign: "center",
-    lineHeight: 20,
+    color: MUTED,
+    paddingHorizontal: 60,
+    paddingVertical: 6,
   },
 });
