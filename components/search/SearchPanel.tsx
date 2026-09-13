@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -7,9 +7,57 @@ import {
   Pressable,
   ScrollView,
   ViewStyle,
+  Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BLUE_ACTIVE, BLUE_INACTIVE } from "@/constants/theme";
+
+type SearchScrollContextValue = {
+  onFieldFocus: () => void;
+  onFieldBlur: () => void;
+};
+
+const SearchScrollContext = createContext<SearchScrollContextValue>({
+  onFieldFocus: () => {},
+  onFieldBlur: () => {},
+});
+
+export function useSearchScroll() {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollOffsetRef = useRef(0);
+
+  return {
+    scrollViewRef,
+    scrollOffsetRef,
+    scrollViewProps: {
+      ref: scrollViewRef,
+      automaticallyAdjustKeyboardInsets: false,
+      keyboardShouldPersistTaps: "handled" as const,
+      onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+      },
+      scrollEventThrottle: 16,
+    },
+  };
+}
+
+const scrollPanelToTop = (
+  scroll: ScrollView | null,
+  panel: View | null,
+  offsetY = 0,
+) => {
+  if (!scroll || !panel) return;
+
+  panel.measureInWindow((_x, panelY) => {
+    scroll.measureInWindow((_sx, scrollY) => {
+      const nextY = Math.max(0, offsetY + (panelY - scrollY - 8));
+      if (Math.abs(nextY - offsetY) < 4) return;
+      scroll.scrollTo({ y: nextY, animated: true });
+    });
+  });
+};
 
 const TEXT = "#11181C";
 const MUTED = "#6b7280";
@@ -32,11 +80,55 @@ type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 export function SearchPanel({
   children,
   style,
+  scrollViewRef,
+  scrollOffsetRef,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
+  scrollOffsetRef?: React.RefObject<number>;
 }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const panelRef = useRef<View>(null);
+  const fieldFocusedRef = useRef(false);
+
+  const scrollPanelIntoView = useCallback(() => {
+    requestAnimationFrame(() =>
+      scrollPanelToTop(
+        scrollViewRef?.current ?? null,
+        panelRef.current,
+        scrollOffsetRef?.current ?? 0,
+      ),
+    );
+  }, [scrollViewRef, scrollOffsetRef]);
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () => {
+      if (fieldFocusedRef.current) scrollPanelIntoView();
+    });
+    return () => show.remove();
+  }, [scrollPanelIntoView]);
+
+  return (
+    <SearchScrollContext.Provider
+      value={{
+        onFieldFocus: () => {
+          fieldFocusedRef.current = true;
+          scrollPanelIntoView();
+        },
+        onFieldBlur: () => {
+          fieldFocusedRef.current = false;
+        },
+      }}
+    >
+      <View
+        ref={panelRef}
+        collapsable={false}
+        style={[styles.card, style]}
+      >
+        {children}
+      </View>
+    </SearchScrollContext.Provider>
+  );
 }
 
 export function SearchFieldDivider() {
@@ -72,6 +164,8 @@ export function SearchField({
   onSelectSuggestion?: (item: SearchSuggestion) => void;
   zIndex?: number;
 }) {
+  const scrollCtx = useContext(SearchScrollContext);
+
   return (
     <View style={[styles.fieldWrap, { zIndex }]}>
       <Pressable
@@ -85,7 +179,9 @@ export function SearchField({
           },
         ]}
         onPress={() => {
-          if (editable) onFocus();
+          if (!editable) return;
+          scrollCtx.onFieldFocus();
+          onFocus();
         }}
       >
         <View style={styles.pinCircle}>
@@ -100,8 +196,14 @@ export function SearchField({
             value={value}
             editable={editable}
             onChangeText={onChangeText}
-            onFocus={onFocus}
-            onBlur={onBlur}
+            onFocus={() => {
+              scrollCtx.onFieldFocus();
+              onFocus();
+            }}
+            onBlur={() => {
+              scrollCtx.onFieldBlur();
+              onBlur?.();
+            }}
           />
         </View>
         <MaterialIcons name="chevron-right" size={22} color={MUTED} />

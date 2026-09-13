@@ -15,6 +15,7 @@ import {
   SearchPanel,
   SearchField,
   SearchButton,
+  useSearchScroll,
 } from "@/components/search/SearchPanel";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
@@ -52,6 +53,7 @@ export default function LiveTrackingScreen() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const params = useLocalSearchParams();
+  const searchScroll = useSearchScroll();
 
   const sortedTrains = useMemo(
     () => [...trainDataSummary].sort((a, b) => a.name.localeCompare(b.name)),
@@ -96,6 +98,11 @@ export default function LiveTrackingScreen() {
     setPickedTrain(train);
     setSearchQuery(train.name);
     setShowDropdown(false);
+  };
+
+  const showTrainTracking = (train: TrainInfo) => {
+    handleTrainSelect(train);
+    setSelectedTrain(train);
   };
 
   const handleSendSMS = (trainNumber: string) => {
@@ -180,7 +187,11 @@ export default function LiveTrackingScreen() {
       <View
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
-        <ScrollView style={styles.scrollView}>
+        <ScrollView
+          {...searchScroll.scrollViewProps}
+          style={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.header}>
             <View style={styles.logoWrap}>
               <BrandLogo />
@@ -191,7 +202,7 @@ export default function LiveTrackingScreen() {
                   Live Train Tracking
                 </Text>
                 <Text style={styles.subtitle}>
-                  Search for a train to track its live location
+                  Browse trains and send SMS to 16318
                 </Text>
               </View>
               {selectedTrain && (
@@ -225,7 +236,10 @@ export default function LiveTrackingScreen() {
           </View>
 
           <View style={styles.searchSection}>
-            <SearchPanel>
+            <SearchPanel
+              scrollViewRef={searchScroll.scrollViewRef}
+              scrollOffsetRef={searchScroll.scrollOffsetRef}
+            >
               <SearchField
                 icon="train"
                 label="Search train"
@@ -336,6 +350,40 @@ export default function LiveTrackingScreen() {
 
           <AdPlaceholder />
 
+          {!selectedTrain ? (
+          <View style={styles.trainsGrid}>
+            {sortedTrains.map((train) => {
+              const bengaliName = getTrainBengaliName(train.name);
+              return (
+                <Pressable
+                  key={train.name}
+                  style={({ pressed }) => [
+                    styles.trainCard,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
+                  onPress={() => showTrainTracking(train)}
+                >
+                  <Text style={styles.trainName}>{train.name}</Text>
+                  {bengaliName ? (
+                    <Text style={styles.trainNameBn}>{bengaliName}</Text>
+                  ) : null}
+                  {train.forwardTrainNumber ? (
+                    <Text style={styles.trainRoute}>
+                      {train.forwardPath} · TR {train.forwardTrainNumber}
+                    </Text>
+                  ) : null}
+                  {train.reverseTrainNumber ? (
+                    <Text style={styles.trainRoute}>
+                      {train.reversePath} · TR {train.reverseTrainNumber}
+                    </Text>
+                  ) : null}
+                  <Text style={styles.viewDetails}>Track live →</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          ) : null}
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </View>
@@ -393,8 +441,46 @@ const styles = StyleSheet.create({
     color: TEXT,
   },
   searchSection: {
-    marginBottom: 30,
+    marginBottom: 20,
     zIndex: 5,
+  },
+  trainsGrid: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  trainCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: CARD,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  trainName: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "capitalize",
+    color: TEXT,
+  },
+  trainNameBn: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: MUTED,
+  },
+  trainRoute: {
+    fontSize: 13,
+    marginTop: 2,
+    color: MUTED,
+  },
+  viewDetails: {
+    fontSize: 14,
+    color: BLUE_ACTIVE,
+    fontWeight: "500",
+    marginTop: 8,
   },
   selectedTrainCard: {
     marginHorizontal: 16,

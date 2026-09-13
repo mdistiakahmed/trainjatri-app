@@ -14,6 +14,7 @@ import {
   SearchPanel,
   SearchField,
   SearchButton,
+  useSearchScroll,
 } from "@/components/search/SearchPanel";
 import { formatStationName, getRoutesForStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
@@ -60,6 +61,7 @@ export default function StationDetailScreen() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const searchScroll = useSearchScroll();
 
   const stationName = useMemo(() => formatStationName(name || ""), [name]);
   const routes = useMemo(() => getRoutesForStation(stationName), [stationName]);
@@ -152,6 +154,7 @@ export default function StationDetailScreen() {
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
         <ScrollView
+          {...searchScroll.scrollViewProps}
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollViewContent}
@@ -198,7 +201,11 @@ export default function StationDetailScreen() {
             </Text>
           </View>
 
-          <SearchPanel style={{ marginBottom: 20 }}>
+          <SearchPanel
+            style={{ marginBottom: 20 }}
+            scrollViewRef={searchScroll.scrollViewRef}
+            scrollOffsetRef={searchScroll.scrollOffsetRef}
+          >
             <SearchField
               icon="place"
               label="Destination"

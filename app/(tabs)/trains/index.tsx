@@ -13,6 +13,7 @@ import {
   SearchPanel,
   SearchField,
   SearchButton,
+  useSearchScroll,
 } from "@/components/search/SearchPanel";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
@@ -33,6 +34,7 @@ export default function TrainsScreen() {
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const searchScroll = useSearchScroll();
 
   const matchTrain = (trainName: string, queryText: string) => {
     const cleanName = stripBracketContent(trainName);
@@ -85,6 +87,7 @@ export default function TrainsScreen() {
     >
       <View style={styles.container}>
         <ScrollView
+          {...searchScroll.scrollViewProps}
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
         >
@@ -100,7 +103,11 @@ export default function TrainsScreen() {
             </Text>
           </View>
 
-          <SearchPanel style={{ marginBottom: 20 }}>
+          <SearchPanel
+            style={{ marginBottom: 20 }}
+            scrollViewRef={searchScroll.scrollViewRef}
+            scrollOffsetRef={searchScroll.scrollOffsetRef}
+          >
             <SearchField
               icon="train"
               label="Search train"

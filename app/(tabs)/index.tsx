@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -14,6 +14,7 @@ import {
   SearchField,
   SearchFieldDivider,
   SearchButton,
+  useSearchScroll,
 } from "@/components/search/SearchPanel";
 import { router } from "expo-router";
 import { uniqueTrainNames } from "@/utils/trainNames";
@@ -64,7 +65,7 @@ export default function HomeScreen() {
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [fromFocused, setFromFocused] = useState(false);
   const [toFocused, setToFocused] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const searchScroll = useSearchScroll();
 
   const popularTrains = uniqueTrainNames.slice(0, 6);
   const routes = useMemo(() => getRoutes(), []);
@@ -163,7 +164,7 @@ export default function HomeScreen() {
     >
       <View style={styles.container}>
         <ScrollView
-          ref={scrollViewRef}
+          {...searchScroll.scrollViewProps}
           style={styles.scrollView}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -172,7 +173,10 @@ export default function HomeScreen() {
             <BrandLogo />
           </View>
 
-          <SearchPanel>
+          <SearchPanel
+            scrollViewRef={searchScroll.scrollViewRef}
+            scrollOffsetRef={searchScroll.scrollOffsetRef}
+          >
             <SearchField
               label="From / যাত্রা শুরু"
               placeholder="Select station"

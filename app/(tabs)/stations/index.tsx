@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
@@ -14,6 +14,7 @@ import {
   SearchField,
   SearchFieldDivider,
   SearchButton,
+  useSearchScroll,
 } from "@/components/search/SearchPanel";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
@@ -44,7 +45,7 @@ export default function StationsScreen() {
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [fromFocused, setFromFocused] = useState(false);
   const [toFocused, setToFocused] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const searchScroll = useSearchScroll();
 
   const routes = useMemo(() => getRoutes(), []);
   const groupedRoutes = useMemo(
@@ -106,9 +107,6 @@ export default function StationsScreen() {
     setShowToDropdown(false);
   };
 
-  const scrollToTop = () => {
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
 
   const handleSearchRoute = () => {
     if (!fromStation) return;
@@ -143,7 +141,7 @@ export default function StationsScreen() {
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
         <ScrollView
-          ref={scrollViewRef}
+          {...searchScroll.scrollViewProps}
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
         >
@@ -159,7 +157,11 @@ export default function StationsScreen() {
             </Text>
           </View>
 
-          <SearchPanel style={{ marginBottom: 10 }}>
+          <SearchPanel
+            style={{ marginBottom: 10 }}
+            scrollViewRef={searchScroll.scrollViewRef}
+            scrollOffsetRef={searchScroll.scrollOffsetRef}
+          >
             <SearchField
               label="From / যাত্রা শুরু"
               placeholder="Select station"
@@ -173,7 +175,6 @@ export default function StationsScreen() {
               onFocus={() => {
                 setFromFocused(true);
                 setShowToDropdown(false);
-                scrollToTop();
                 if (fromStation.trim()) setShowFromDropdown(true);
               }}
               onBlur={() => setFromFocused(false)}
@@ -200,7 +201,6 @@ export default function StationsScreen() {
               onFocus={() => {
                 setToFocused(true);
                 setShowFromDropdown(false);
-                scrollToTop();
                 if (fromStation.trim()) setShowToDropdown(true);
               }}
               onBlur={() => setToFocused(false)}
