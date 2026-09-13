@@ -5,12 +5,16 @@ import {
   Text,
   ScrollView,
   Pressable,
-  TextInput,
   ImageBackground,
   Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useNavigation, router } from "expo-router";
 import { BrandLogo } from "@/components/BrandLogo";
+import {
+  SearchPanel,
+  SearchField,
+  SearchButton,
+} from "@/components/search/SearchPanel";
 import { formatStationName, getRoutesForStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
 import {
@@ -31,8 +35,6 @@ const MUTED = "#6b7280";
 const CARD = "#ffffff";
 const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
-const PLACEHOLDER = "#9aa3af";
-const BORDER = "#111111";
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, "_");
@@ -50,8 +52,13 @@ export default function StationDetailScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState<string | null>(
+    null,
+  );
   const [isSaved, setIsSaved] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const stationName = useMemo(() => formatStationName(name || ""), [name]);
@@ -102,13 +109,30 @@ export default function StationDetailScreen() {
     [routes],
   );
 
+  const destinationSuggestions = availableDestinations
+    .filter((destination) => {
+      if (!searchQuery.trim()) return false;
+      const destinationBn = getBengaliStationName(destination);
+      const query = searchQuery.toLowerCase();
+      return (
+        destination.toLowerCase().includes(query) ||
+        (!!destinationBn && destinationBn.includes(searchQuery))
+      );
+    })
+    .slice(0, 12)
+    .map((destination) => ({
+      key: destination,
+      title: destination,
+      subtitle: getBengaliStationName(destination) || undefined,
+    }));
+
   const filteredRoutes = routes.filter((route) => {
     const destination = route.route.split(" - ")[1];
     const destinationBn = getBengaliStationName(destination);
-    const query = searchQuery.toLowerCase();
+    const query = appliedQuery.toLowerCase();
     return (
       destination.toLowerCase().includes(query) ||
-      (destinationBn && destinationBn.includes(searchQuery))
+      (destinationBn && destinationBn.includes(appliedQuery))
     );
   });
 
@@ -174,20 +198,46 @@ export default function StationDetailScreen() {
             </Text>
           </View>
 
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={[
-                styles.searchInput,
-                { borderColor: isSearchFocused ? BLUE_ACTIVE : BORDER },
-              ]}
+          <SearchPanel style={{ marginBottom: 20 }}>
+            <SearchField
+              icon="place"
+              label="Destination"
               placeholder="Search destination / গন্তব্য সার্চ করুন"
-              placeholderTextColor={PLACEHOLDER}
               value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setIsSearchFocused(true)}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setSelectedDestination(null);
+                setAppliedQuery("");
+                setShowDropdown(text.trim().length > 0);
+              }}
+              focused={isSearchFocused}
+              onFocus={() => {
+                setIsSearchFocused(true);
+                if (searchQuery.trim() && !selectedDestination) {
+                  setShowDropdown(true);
+                }
+              }}
               onBlur={() => setIsSearchFocused(false)}
+              suggestions={destinationSuggestions}
+              showSuggestions={showDropdown && searchQuery.trim().length > 0}
+              onSelectSuggestion={(item) => {
+                setSearchQuery(item.title);
+                setSelectedDestination(item.key);
+                setAppliedQuery(item.title);
+                setShowDropdown(false);
+              }}
+              zIndex={3}
             />
-          </View>
+            <SearchButton
+              label="Search Destinations"
+              enabled={!!selectedDestination}
+              onPress={() => {
+                if (selectedDestination) {
+                  handleDestinationPress(selectedDestination);
+                }
+              }}
+            />
+          </SearchPanel>
 
           <AdPlaceholder />
 
@@ -323,19 +373,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     color: MUTED,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  searchInput: {
-    height: 50,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 3,
-    backgroundColor: FIELD_BG,
-    color: TEXT,
   },
   scrollView: {
     flex: 1,

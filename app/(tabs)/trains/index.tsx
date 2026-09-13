@@ -4,12 +4,16 @@ import {
   View,
   Text,
   ScrollView,
-  TextInput,
   Pressable,
   ImageBackground,
 } from "react-native";
 import { router } from "expo-router";
 import { BrandLogo } from "@/components/BrandLogo";
+import {
+  SearchPanel,
+  SearchField,
+  SearchButton,
+} from "@/components/search/SearchPanel";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
@@ -18,9 +22,6 @@ const TEXT = "#11181C";
 const MUTED = "#6b7280";
 const CARD = "#ffffff";
 const PAGE_BG = "#f7f8fa";
-const FIELD_BG = "#f5f5f5";
-const PLACEHOLDER = "#9aa3af";
-const BORDER = "#111111";
 
 const stripBracketContent = (name: string) => {
   return name.replace(/\s*\(.*?\)\s*/g, "").trim();
@@ -28,17 +29,45 @@ const stripBracketContent = (name: string) => {
 
 export default function TrainsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
+  const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const matchTrain = (trainName: string, queryText: string) => {
+    const cleanName = stripBracketContent(trainName);
+    const bengaliName =
+      trainNameEnBnMapping[cleanName as keyof typeof trainNameEnBnMapping];
+    const query = queryText.toLowerCase();
+    return (
+      cleanName.toLowerCase().includes(query) ||
+      (!!bengaliName && bengaliName.includes(queryText))
+    );
+  };
+
+  const trainSuggestions = uniqueTrainNames
+    .filter((trainName) => matchTrain(trainName, searchQuery))
+    .slice(0, 12)
+    .map((trainName) => {
+      const cleanName = stripBracketContent(trainName);
+      const bengaliName =
+        trainNameEnBnMapping[cleanName as keyof typeof trainNameEnBnMapping];
+      return {
+        key: trainName,
+        title: cleanName,
+        subtitle: bengaliName || undefined,
+      };
+    });
 
   const filteredTrains = uniqueTrainNames.filter((trainName) => {
     const cleanName = stripBracketContent(trainName);
     const bengaliName =
       trainNameEnBnMapping[cleanName as keyof typeof trainNameEnBnMapping];
 
-    const query = searchQuery.toLowerCase();
+    const query = appliedQuery.toLowerCase();
     return (
       cleanName.toLowerCase().includes(query) ||
-      (bengaliName && bengaliName.includes(searchQuery))
+      (bengaliName && bengaliName.includes(appliedQuery))
     );
   });
 
@@ -71,23 +100,44 @@ export default function TrainsScreen() {
             </Text>
           </View>
 
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  borderWidth: isSearchFocused ? 3 : 2,
-                  borderColor: isSearchFocused ? BLUE_ACTIVE : BORDER,
-                },
-              ]}
+          <SearchPanel style={{ marginBottom: 20 }}>
+            <SearchField
+              icon="train"
+              label="Search train"
               placeholder="Search train name / ট্রেন সার্চ করুন"
-              placeholderTextColor={PLACEHOLDER}
               value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setIsSearchFocused(true)}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setSelectedTrain(null);
+                setAppliedQuery("");
+                setShowDropdown(text.trim().length > 0);
+              }}
+              focused={isSearchFocused}
+              onFocus={() => {
+                setIsSearchFocused(true);
+                if (searchQuery.trim() && !selectedTrain) {
+                  setShowDropdown(true);
+                }
+              }}
               onBlur={() => setIsSearchFocused(false)}
+              suggestions={trainSuggestions}
+              showSuggestions={showDropdown && searchQuery.trim().length > 0}
+              onSelectSuggestion={(item) => {
+                setSearchQuery(item.title);
+                setSelectedTrain(item.key);
+                setAppliedQuery(item.title);
+                setShowDropdown(false);
+              }}
+              zIndex={3}
             />
-          </View>
+            <SearchButton
+              label="Search Trains"
+              enabled={!!selectedTrain}
+              onPress={() => {
+                if (selectedTrain) handleTrainPress(selectedTrain);
+              }}
+            />
+          </SearchPanel>
 
           <View style={styles.trainsGrid}>
             {filteredTrains.map((trainName) => {
@@ -156,18 +206,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     color: MUTED,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  searchInput: {
-    height: 50,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: FIELD_BG,
-    color: TEXT,
   },
   trainsGrid: {
     paddingHorizontal: 20,

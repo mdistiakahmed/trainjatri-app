@@ -4,12 +4,17 @@ import {
   View,
   ScrollView,
   Pressable,
-  TextInput,
   Text,
   ImageBackground,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BrandLogo } from "@/components/BrandLogo";
+import {
+  SearchPanel,
+  SearchField,
+  SearchFieldDivider,
+  SearchButton,
+} from "@/components/search/SearchPanel";
 import { router } from "expo-router";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
@@ -20,16 +25,12 @@ import {
   formatStationNameForUrl,
 } from "@/utils/stringutils";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
-import { BLUE_ACTIVE, BLUE_INACTIVE } from "@/constants/theme";
+import { BLUE_ACTIVE } from "@/constants/theme";
 
 const ACCENT_GREEN = "#2E9B4A";
 const TEXT = "#11181C";
 const MUTED = "#6b7280";
 const CARD = "#ffffff";
-const FIELD_BG = "#f7f8fa";
-const PLACEHOLDER = "#9aa3af";
-const DIVIDER = "#eceff3";
-const DROPDOWN_PRESSED = "#e8f4ff";
 const PIN_BG = "#E7F1FF";
 
 const majorStations = [
@@ -147,98 +148,12 @@ export default function HomeScreen() {
     router.push(`/(tabs)/stations/${stationSlug}/${routeSlug}` as any);
   };
 
-  const renderStationField = (
-    label: string,
-    placeholder: string,
-    value: string,
-    onChange: (text: string) => void,
-    focused: boolean,
-    setFocused: (v: boolean) => void,
-    showDropdown: boolean,
-    suggestions: string[],
-    onSelect: (name: string) => void,
-    zIndex: number,
-    editable = true,
-    onFocusExtra?: () => void,
-  ) => (
-    <View style={[styles.fieldWrap, { zIndex }]}>
-      <Pressable
-        style={[
-          styles.stationField,
-          {
-            backgroundColor: FIELD_BG,
-            borderColor: focused ? BLUE_ACTIVE : "transparent",
-            borderWidth: focused ? 2 : 0,
-            opacity: editable ? 1 : 0.55,
-          },
-        ]}
-        onPress={() => {
-          if (!editable) return;
-          setFocused(true);
-          onFocusExtra?.();
-          if (value.trim() || suggestions.length) {
-            /* dropdown handled by input focus */
-          }
-        }}
-      >
-        <View style={styles.pinCircle}>
-          <MaterialIcons name="location-on" size={18} color={BLUE_ACTIVE} />
-        </View>
-        <View style={styles.fieldTextWrap}>
-          <Text style={styles.fieldLabel}>{label}</Text>
-          <TextInput
-            style={styles.fieldInput}
-            placeholder={placeholder}
-            placeholderTextColor={PLACEHOLDER}
-            value={value}
-            editable={editable}
-            onChangeText={(text) => {
-              onChange(text);
-            }}
-            onFocus={() => {
-              setFocused(true);
-              onFocusExtra?.();
-            }}
-            onBlur={() => setFocused(false)}
-          />
-        </View>
-        <MaterialIcons name="chevron-right" size={22} color={MUTED} />
-      </Pressable>
-      {showDropdown && suggestions.length > 0 && (
-        <View
-          style={[
-            styles.dropdown,
-            { backgroundColor: CARD, borderColor: BLUE_ACTIVE },
-          ]}
-        >
-          <ScrollView
-            style={styles.dropdownScroll}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="always"
-          >
-            {suggestions.map((stationName) => {
-              const bengaliName = getBengaliStationName(stationName);
-              return (
-                <Pressable
-                  key={stationName}
-                  style={({ pressed }) => [
-                    styles.dropdownItem,
-                    { backgroundColor: pressed ? DROPDOWN_PRESSED : CARD },
-                  ]}
-                  onPress={() => onSelect(stationName)}
-                >
-                  <Text style={styles.dropdownItemText}>{stationName}</Text>
-                  {bengaliName ? (
-                    <Text style={styles.dropdownItemTextBn}>{bengaliName}</Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-    </View>
-  );
+  const toStationSuggestions = (names: string[]) =>
+    names.map((stationName) => ({
+      key: stationName,
+      title: stationName,
+      subtitle: getBengaliStationName(stationName) || undefined,
+    }));
 
   return (
     <ImageBackground
@@ -257,68 +172,57 @@ export default function HomeScreen() {
             <BrandLogo />
           </View>
 
-          <View style={styles.searchCard}>
-            {renderStationField(
-              "From / যাত্রা শুরু",
-              "Select station",
-              fromStation,
-              (text) => {
+          <SearchPanel>
+            <SearchField
+              label="From / যাত্রা শুরু"
+              placeholder="Select station"
+              value={fromStation}
+              onChangeText={(text) => {
                 setFromStation(text);
                 setShowFromDropdown(text.trim().length > 0);
                 setShowToDropdown(false);
-              },
-              fromFocused,
-              setFromFocused,
-              showFromDropdown,
-              filteredFromStations,
-              handleFromStationSelect,
-              3,
-              true,
-              () => {
+              }}
+              focused={fromFocused}
+              onFocus={() => {
+                setFromFocused(true);
                 setShowToDropdown(false);
                 if (fromStation.trim()) setShowFromDropdown(true);
-              },
-            )}
-
-            <View style={styles.fieldDivider} />
-
-            {renderStationField(
-              "To / গন্তব্য",
-              "Select station",
-              toStation,
-              (text) => {
+              }}
+              onBlur={() => setFromFocused(false)}
+              suggestions={toStationSuggestions(filteredFromStations)}
+              showSuggestions={showFromDropdown}
+              onSelectSuggestion={(item) => handleFromStationSelect(item.title)}
+              zIndex={3}
+            />
+            <SearchFieldDivider />
+            <SearchField
+              label="To / গন্তব্য"
+              placeholder="Select station"
+              value={toStation}
+              onChangeText={(text) => {
                 setToStation(text);
                 setShowToDropdown(fromStation.trim().length > 0);
                 setShowFromDropdown(false);
-              },
-              toFocused,
-              setToFocused,
-              showToDropdown && !!fromStation,
-              filteredToStations,
-              handleToStationSelect,
-              2,
-              !!fromStation,
-              () => {
+              }}
+              focused={toFocused}
+              onFocus={() => {
+                setToFocused(true);
                 setShowFromDropdown(false);
                 if (fromStation.trim()) setShowToDropdown(true);
-              },
-            )}
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.searchButton,
-                {
-                  backgroundColor: fromStation ? BLUE_ACTIVE : BLUE_INACTIVE,
-                  opacity: pressed && fromStation ? 0.85 : 1,
-                },
-              ]}
+              }}
+              onBlur={() => setToFocused(false)}
+              editable={!!fromStation}
+              suggestions={toStationSuggestions(filteredToStations)}
+              showSuggestions={showToDropdown && !!fromStation}
+              onSelectSuggestion={(item) => handleToStationSelect(item.title)}
+              zIndex={2}
+            />
+            <SearchButton
+              label="View Trains"
+              enabled={!!fromStation}
               onPress={handleSearchRoute}
-              disabled={!fromStation}
-            >
-              <MaterialIcons name="search" size={20} color="#fff" />
-              <Text style={styles.searchButtonText}>View Trains</Text>
-            </Pressable>
-          </View>
+            />
+          </SearchPanel>
 
           <View style={styles.quickRow}>
             <QuickAction
@@ -502,103 +406,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 20,
     paddingBottom: 16,
-  },
-  searchCard: {
-    backgroundColor: CARD,
-    marginHorizontal: 16,
-    marginTop: 0,
-    borderRadius: 22,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
-    zIndex: 4,
-  },
-  fieldWrap: {
-    position: "relative",
-  },
-  stationField: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  pinCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E7F1FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-  fieldTextWrap: {
-    flex: 1,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: MUTED,
-  },
-  fieldInput: {
-    fontSize: 15,
-    fontWeight: "600",
-    paddingVertical: 2,
-    paddingHorizontal: 0,
-    color: TEXT,
-  },
-  fieldDivider: {
-    height: 1,
-    backgroundColor: DIVIDER,
-    marginVertical: 8,
-    marginLeft: 56,
-  },
-  dropdown: {
-    position: "absolute",
-    top: 64,
-    left: 0,
-    right: 0,
-    borderWidth: 2,
-    borderRadius: 12,
-    maxHeight: 200,
-    zIndex: 20,
-    elevation: 12,
-  },
-  dropdownScroll: {
-    maxHeight: 200,
-  },
-  dropdownItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  dropdownItemText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: TEXT,
-  },
-  dropdownItemTextBn: {
-    fontSize: 13,
-    marginTop: 2,
-    color: MUTED,
-  },
-  searchButton: {
-    marginTop: 14,
-    borderRadius: 14,
-    minHeight: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  searchButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
   },
   quickRow: {
     flexDirection: "row",

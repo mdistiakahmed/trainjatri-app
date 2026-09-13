@@ -4,7 +4,6 @@ import {
   View,
   Text,
   ScrollView,
-  TextInput,
   Pressable,
   Linking,
   Alert,
@@ -12,6 +11,11 @@ import {
 } from "react-native";
 import { trainDataSummary } from "@/data/trainDataSummary";
 import { BrandLogo } from "@/components/BrandLogo";
+import {
+  SearchPanel,
+  SearchField,
+  SearchButton,
+} from "@/components/search/SearchPanel";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 import { useLocalSearchParams } from "expo-router";
@@ -23,10 +27,7 @@ const MUTED = "#6b7280";
 const CARD = "#ffffff";
 const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
-const PLACEHOLDER = "#9aa3af";
-const BORDER = "#111111";
 const SELECTED_BG = "#dbeafe";
-const DROPDOWN_PRESSED = "#f5f5f5";
 
 interface TrainInfo {
   name: string;
@@ -45,8 +46,10 @@ const getTrainBengaliName = (englishName: string) => {
 
 export default function LiveTrackingScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [pickedTrain, setPickedTrain] = useState<TrainInfo | null>(null);
   const [selectedTrain, setSelectedTrain] = useState<TrainInfo | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const params = useLocalSearchParams();
 
@@ -55,30 +58,42 @@ export default function LiveTrackingScreen() {
     [],
   );
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || selectedTrain) return [];
-    const query = searchQuery.toLowerCase();
+  const findMatchingTrains = (queryText: string) => {
+    const query = queryText.trim().toLowerCase();
+    if (!query) return [];
     return sortedTrains.filter((train) => {
       const bengaliName = getTrainBengaliName(train.name);
       return (
         train.name.toLowerCase().includes(query) ||
         train.forwardPath.toLowerCase().includes(query) ||
         train.reversePath.toLowerCase().includes(query) ||
-        train.forwardTrainNumber.includes(searchQuery) ||
-        train.reverseTrainNumber.includes(searchQuery) ||
-        (bengaliName && bengaliName.includes(searchQuery))
+        train.forwardTrainNumber.includes(queryText.trim()) ||
+        train.reverseTrainNumber.includes(queryText.trim()) ||
+        (bengaliName && bengaliName.includes(queryText.trim()))
       );
     });
-  }, [searchQuery, sortedTrains, selectedTrain]);
+  };
+
+  const searchResults = useMemo(() => {
+    if (pickedTrain) return [];
+    return findMatchingTrains(searchQuery);
+  }, [searchQuery, sortedTrains, pickedTrain]);
 
   const handleInputChange = (text: string) => {
     setSearchQuery(text);
+    setPickedTrain(null);
     setSelectedTrain(null);
     setShowDropdown(text.trim().length > 0);
   };
 
+  const handleSearch = () => {
+    if (!pickedTrain) return;
+    setSelectedTrain(pickedTrain);
+    setShowDropdown(false);
+  };
+
   const handleTrainSelect = (train: TrainInfo) => {
-    setSelectedTrain(train);
+    setPickedTrain(train);
     setSearchQuery(train.name);
     setShowDropdown(false);
   };
@@ -149,6 +164,7 @@ export default function LiveTrackingScreen() {
     if (params.trainName && typeof params.trainName === "string") {
       const train = sortedTrains.find((t) => t.name === params.trainName);
       if (train) {
+        setPickedTrain(train);
         setSelectedTrain(train);
         setSearchQuery(train.name);
       }
@@ -209,51 +225,40 @@ export default function LiveTrackingScreen() {
           </View>
 
           <View style={styles.searchSection}>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
+            <SearchPanel>
+              <SearchField
+                icon="train"
+                label="Search train"
                 placeholder="Search train name / ট্রেন সার্চ করুন"
-                placeholderTextColor={PLACEHOLDER}
                 value={searchQuery}
                 onChangeText={handleInputChange}
-                onFocus={() => searchQuery.trim() && setShowDropdown(true)}
+                focused={isSearchFocused}
+                onFocus={() => {
+                  setIsSearchFocused(true);
+                  if (searchQuery.trim() && !pickedTrain) {
+                    setShowDropdown(true);
+                  }
+                }}
+                onBlur={() => setIsSearchFocused(false)}
+                suggestions={searchResults.map((train) => ({
+                  key: train.name,
+                  title: train.name,
+                  subtitle: getTrainBengaliName(train.name) || undefined,
+                  caption: `${train.forwardPath} / ${train.reversePath}`,
+                }))}
+                showSuggestions={showDropdown}
+                onSelectSuggestion={(item) => {
+                  const train = sortedTrains.find((t) => t.name === item.key);
+                  if (train) handleTrainSelect(train);
+                }}
+                zIndex={5}
               />
-              {showDropdown && searchResults.length > 0 && (
-                <View style={styles.dropdown}>
-                  <ScrollView style={styles.dropdownScroll}>
-                    {searchResults.map((train, index) => {
-                      const bengaliName = getTrainBengaliName(train.name);
-                      return (
-                        <Pressable
-                          key={`${train.name}-${index}`}
-                          style={({ pressed }) => [
-                            styles.dropdownItem,
-                            {
-                              backgroundColor: pressed
-                                ? DROPDOWN_PRESSED
-                                : CARD,
-                            },
-                          ]}
-                          onPress={() => handleTrainSelect(train)}
-                        >
-                          <Text style={styles.trainName}>
-                            {train.name}
-                          </Text>
-                          {bengaliName && (
-                            <Text style={styles.trainNameBn}>
-                              {bengaliName}
-                            </Text>
-                          )}
-                          <Text style={styles.trainPath}>
-                            {train.forwardPath} / {train.reversePath}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+              <SearchButton
+                label="Search Train"
+                enabled={!!pickedTrain}
+                onPress={handleSearch}
+              />
+            </SearchPanel>
 
             {selectedTrain && (
               <View style={styles.selectedTrainCard}>
@@ -388,64 +393,11 @@ const styles = StyleSheet.create({
     color: TEXT,
   },
   searchSection: {
-    marginHorizontal: 20,
     marginBottom: 30,
-  },
-  searchContainer: {
-    position: "relative",
-    zIndex: 1000,
-  },
-  searchInput: {
-    height: 50,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 2,
-    borderColor: BORDER,
-    backgroundColor: FIELD_BG,
-    color: TEXT,
-  },
-  dropdown: {
-    position: "absolute",
-    top: 55,
-    left: 0,
-    right: 0,
-    maxHeight: 240,
-    borderRadius: 10,
-    borderWidth: 1,
-    backgroundColor: CARD,
-    borderColor: "#e5e5e5",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  dropdownScroll: {
-    maxHeight: 240,
-  },
-  dropdownItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-  trainName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-    textTransform: "capitalize",
-    color: TEXT,
-  },
-  trainNameBn: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: MUTED,
-  },
-  trainPath: {
-    fontSize: 14,
-    color: MUTED,
+    zIndex: 5,
   },
   selectedTrainCard: {
+    marginHorizontal: 16,
     marginTop: 20,
     padding: 16,
     borderRadius: 12,
