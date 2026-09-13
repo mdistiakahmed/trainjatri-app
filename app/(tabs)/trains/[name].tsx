@@ -8,8 +8,8 @@ import {
   ImageBackground,
   Pressable,
 } from "react-native";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useNavigation } from "expo-router";
+import { BrandLogo } from "@/components/BrandLogo";
 import { getDataForTrain } from "@/utils/getData";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
@@ -295,11 +295,9 @@ export default function TrainDetailScreen() {
           </View>
 
           <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
+            <View style={styles.logoWrap}>
+              <BrandLogo />
+            </View>
             <View style={styles.titleContainer}>
               <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
                 {trainName} Train Schedule
@@ -404,9 +402,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  logo: {
-    width: 150,
-    height: 75,
+  logoWrap: {
     marginBottom: 12,
   },
   titleContainer: {

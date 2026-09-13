@@ -10,8 +10,8 @@ import {
   Alert,
   ImageBackground,
 } from "react-native";
-import { Image } from "expo-image";
 import { trainDataSummary } from "@/data/trainDataSummary";
+import { BrandLogo } from "@/components/BrandLogo";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { Fonts } from "@/constants/theme";
 import { useLocalSearchParams } from "expo-router";
@@ -169,11 +169,9 @@ export default function LiveTrackingScreen() {
       >
         <ScrollView style={styles.scrollView}>
           <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
+            <View style={styles.logoWrap}>
+              <BrandLogo />
+            </View>
             <View style={styles.headerContent}>
               <View style={styles.titleSection}>
                 <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
@@ -372,9 +370,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     marginTop: 12,
   },
-  logo: {
-    width: 150,
-    height: 75,
+  logoWrap: {
     marginBottom: 12,
     alignSelf: "center",
   },

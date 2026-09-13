@@ -8,8 +8,8 @@ import {
   Pressable,
   ImageBackground,
 } from "react-native";
-import { Image } from "expo-image";
 import { router } from "expo-router";
+import { BrandLogo } from "@/components/BrandLogo";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
 import {
@@ -147,11 +147,9 @@ export default function StationsScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
+            <View style={styles.logoWrap}>
+              <BrandLogo />
+            </View>
             <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
               Railway Stations
             </Text>
@@ -374,9 +372,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: "center",
   },
-  logo: {
-    width: 150,
-    height: 75,
+  logoWrap: {
     marginBottom: 12,
   },
   title: {

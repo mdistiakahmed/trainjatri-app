@@ -8,8 +8,8 @@ import {
   Pressable,
   ImageBackground,
 } from "react-native";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useNavigation, router } from "expo-router";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   parseRouteUrlSlug,
   formatStationNameForUrl,
@@ -244,11 +244,9 @@ export default function RouteDetailScreen() {
           </View>
 
           <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
+            <View style={styles.logoWrap}>
+              <BrandLogo />
+            </View>
             <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
               {stations.from} to {stations.to}
             </Text>
@@ -426,9 +424,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     alignItems: "center",
   },
-  logo: {
-    width: 150,
-    height: 75,
+  logoWrap: {
     marginBottom: 12,
   },
   title: {

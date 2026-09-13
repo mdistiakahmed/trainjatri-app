@@ -8,8 +8,8 @@ import {
   Text,
   ImageBackground,
 } from "react-native";
-import { Image } from "expo-image";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { BrandLogo } from "@/components/BrandLogo";
 import { router } from "expo-router";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
@@ -227,13 +227,9 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => onSelect(stationName)}
                 >
-                  <Text style={styles.dropdownItemText}>
-                    {stationName}
-                  </Text>
+                  <Text style={styles.dropdownItemText}>{stationName}</Text>
                   {bengaliName ? (
-                    <Text style={styles.dropdownItemTextBn}>
-                      {bengaliName}
-                    </Text>
+                    <Text style={styles.dropdownItemTextBn}>{bengaliName}</Text>
                   ) : null}
                 </Pressable>
               );
@@ -250,233 +246,209 @@ export default function HomeScreen() {
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-    <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.heroWrap}>
+      <View style={styles.container}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.hero}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.heroLogo}
-              contentFit="contain"
+            <BrandLogo />
+          </View>
+
+          <View style={styles.searchCard}>
+            {renderStationField(
+              "From / যাত্রা শুরু",
+              "Select station",
+              fromStation,
+              (text) => {
+                setFromStation(text);
+                setShowFromDropdown(text.trim().length > 0);
+                setShowToDropdown(false);
+              },
+              fromFocused,
+              setFromFocused,
+              showFromDropdown,
+              filteredFromStations,
+              handleFromStationSelect,
+              3,
+              true,
+              () => {
+                setShowToDropdown(false);
+                if (fromStation.trim()) setShowFromDropdown(true);
+              },
+            )}
+
+            <View style={styles.fieldDivider} />
+
+            {renderStationField(
+              "To / গন্তব্য",
+              "Select station",
+              toStation,
+              (text) => {
+                setToStation(text);
+                setShowToDropdown(fromStation.trim().length > 0);
+                setShowFromDropdown(false);
+              },
+              toFocused,
+              setToFocused,
+              showToDropdown && !!fromStation,
+              filteredToStations,
+              handleToStationSelect,
+              2,
+              !!fromStation,
+              () => {
+                setShowFromDropdown(false);
+                if (fromStation.trim()) setShowToDropdown(true);
+              },
+            )}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.searchButton,
+                {
+                  backgroundColor: fromStation ? PRIMARY_BLUE : "#9bb7df",
+                  opacity: pressed && fromStation ? 0.85 : 1,
+                },
+              ]}
+              onPress={handleSearchRoute}
+              disabled={!fromStation}
+            >
+              <MaterialIcons name="search" size={20} color="#fff" />
+              <Text style={styles.searchButtonText}>View Trains</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.quickRow}>
+            <QuickAction
+              label="Train Schedule"
+              labelBn="ট্রেন সময়সূচি"
+              icon="train"
+              bg="#E7F1FF"
+              iconColor={PRIMARY_BLUE}
+              onPress={() => router.push("/(tabs)/trains")}
+            />
+            <QuickAction
+              label="Stations"
+              labelBn="স্টেশন"
+              icon="place"
+              bg="#E6F7EA"
+              iconColor={ACCENT_GREEN}
+              onPress={() => router.push("/(tabs)/stations")}
+            />
+            <QuickAction
+              label="Live Updates"
+              labelBn="লাইভ আপডেট"
+              icon="schedule"
+              bg="#EFE8FF"
+              iconColor="#7B5EA7"
+              onPress={() => router.push("/(tabs)/live-tracking")}
+            />
+            <QuickAction
+              label="Popular Routes"
+              labelBn="জনপ্রিয় রুট"
+              icon="star"
+              bg="#FFE8D6"
+              iconColor="#E07A2F"
+              onPress={handlePopularRoutes}
             />
           </View>
-        </View>
 
-        <View style={styles.searchCard}>
-          {renderStationField(
-            "From / যাত্রা শুরু",
-            "Select station",
-            fromStation,
-            (text) => {
-              setFromStation(text);
-              setShowFromDropdown(text.trim().length > 0);
-              setShowToDropdown(false);
-            },
-            fromFocused,
-            setFromFocused,
-            showFromDropdown,
-            filteredFromStations,
-            handleFromStationSelect,
-            3,
-            true,
-            () => {
-              setShowToDropdown(false);
-              if (fromStation.trim()) setShowFromDropdown(true);
-            },
-          )}
+          <AdPlaceholder />
 
-          <View style={styles.fieldDivider} />
-
-          {renderStationField(
-            "To / গন্তব্য",
-            "Select station",
-            toStation,
-            (text) => {
-              setToStation(text);
-              setShowToDropdown(fromStation.trim().length > 0);
-              setShowFromDropdown(false);
-            },
-            toFocused,
-            setToFocused,
-            showToDropdown && !!fromStation,
-            filteredToStations,
-            handleToStationSelect,
-            2,
-            !!fromStation,
-            () => {
-              setShowFromDropdown(false);
-              if (fromStation.trim()) setShowToDropdown(true);
-            },
-          )}
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.searchButton,
-              {
-                backgroundColor: fromStation ? PRIMARY_BLUE : "#9bb7df",
-                opacity: pressed && fromStation ? 0.85 : 1,
-              },
-            ]}
-            onPress={handleSearchRoute}
-            disabled={!fromStation}
-          >
-            <MaterialIcons name="search" size={20} color="#fff" />
-            <Text style={styles.searchButtonText}>
-              View Trains
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.quickRow}>
-          <QuickAction
-            label="Train Schedule"
-            labelBn="ট্রেন সময়সূচি"
-            icon="train"
-            bg="#E7F1FF"
-            iconColor={PRIMARY_BLUE}
-            onPress={() => router.push("/(tabs)/trains")}
-          />
-          <QuickAction
-            label="Stations"
-            labelBn="স্টেশন"
-            icon="place"
-            bg="#E6F7EA"
-            iconColor={ACCENT_GREEN}
-            onPress={() => router.push("/(tabs)/stations")}
-          />
-          <QuickAction
-            label="Live Updates"
-            labelBn="লাইভ আপডেট"
-            icon="schedule"
-            bg="#EFE8FF"
-            iconColor="#7B5EA7"
-            onPress={() => router.push("/(tabs)/live-tracking")}
-          />
-          <QuickAction
-            label="Popular Routes"
-            labelBn="জনপ্রিয় রুট"
-            icon="star"
-            bg="#FFE8D6"
-            iconColor="#E07A2F"
-            onPress={handlePopularRoutes}
-          />
-        </View>
-
-        <AdPlaceholder />
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Popular Trains
-            </Text>
-            <Pressable onPress={() => router.push("/(tabs)/trains")}>
-              <Text style={styles.viewAllLink}>
-                View All →
-              </Text>
-            </Pressable>
-          </View>
-          {popularTrains.map((trainName) => {
-            const cleanName = stripBracketContent(trainName);
-            const trainNameBn =
-              trainNameEnBnMapping[
-                cleanName as keyof typeof trainNameEnBnMapping
-              ];
-            return (
-              <Pressable
-                key={trainName}
-                style={({ pressed }) => [
-                  styles.listCard,
-                  { opacity: pressed ? 0.75 : 1 },
-                ]}
-                onPress={() => handleTrainPress(trainName)}
-              >
-                <View style={styles.listIconWrap}>
-                  <MaterialIcons name="train" size={20} color={PRIMARY_BLUE} />
-                </View>
-                <View style={styles.listCardText}>
-                  <Text style={styles.listCardTitle}>
-                    {cleanName}
-                  </Text>
-                  {trainNameBn ? (
-                    <Text style={styles.listCardBn}>
-                      {trainNameBn}
-                    </Text>
-                  ) : null}
-                </View>
-                <Text style={styles.listCardLink}>
-                  View →
-                </Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Popular Trains</Text>
+              <Pressable onPress={() => router.push("/(tabs)/trains")}>
+                <Text style={styles.viewAllLink}>View All →</Text>
               </Pressable>
-            );
-          })}
-        </View>
-
-        <AdPlaceholder />
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Major Stations
-            </Text>
-            <Pressable onPress={() => router.push("/(tabs)/stations")}>
-              <Text style={styles.viewAllLink}>
-                View All →
-              </Text>
-            </Pressable>
-          </View>
-          <View style={styles.stationsGrid}>
-            {majorStations.map((station) => {
-              const stationBn = getBengaliStationName(station);
+            </View>
+            {popularTrains.map((trainName) => {
+              const cleanName = stripBracketContent(trainName);
+              const trainNameBn =
+                trainNameEnBnMapping[
+                  cleanName as keyof typeof trainNameEnBnMapping
+                ];
               return (
                 <Pressable
-                  key={station}
+                  key={trainName}
                   style={({ pressed }) => [
-                    styles.stationCard,
+                    styles.listCard,
                     { opacity: pressed ? 0.75 : 1 },
                   ]}
-                  onPress={() => handleStationPress(station)}
+                  onPress={() => handleTrainPress(trainName)}
                 >
-                  <MaterialIcons
-                    name="location-on"
-                    size={18}
-                    color={ACCENT_GREEN}
-                  />
-                  <Text style={styles.stationName}>{station}</Text>
-                  {stationBn ? (
-                    <Text style={styles.stationNameBn}>
-                      {stationBn}
-                    </Text>
-                  ) : null}
-                <Text style={styles.stationSubtext}>
-                  View trains
-                </Text>
+                  <View style={styles.listIconWrap}>
+                    <MaterialIcons
+                      name="train"
+                      size={20}
+                      color={PRIMARY_BLUE}
+                    />
+                  </View>
+                  <View style={styles.listCardText}>
+                    <Text style={styles.listCardTitle}>{cleanName}</Text>
+                    {trainNameBn ? (
+                      <Text style={styles.listCardBn}>{trainNameBn}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.listCardLink}>View →</Text>
                 </Pressable>
               );
             })}
           </View>
-        </View>
 
-        <View style={styles.disclaimerSection}>
-          <Text style={styles.disclaimerTitle}>
-            About Our Data
-          </Text>
-          <Text style={styles.disclaimerText}>
-            At Train Jatri, we are committed to providing accurate and
-            up-to-date train schedule information. Our data is collected from
-            official Bangladesh Railway sources.
-          </Text>
-          <Text style={styles.lastUpdated}>
-            Last updated: 24th August, 2026
-          </Text>
-        </View>
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </View>
+          <AdPlaceholder />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Major Stations</Text>
+              <Pressable onPress={() => router.push("/(tabs)/stations")}>
+                <Text style={styles.viewAllLink}>View All →</Text>
+              </Pressable>
+            </View>
+            <View style={styles.stationsGrid}>
+              {majorStations.map((station) => {
+                const stationBn = getBengaliStationName(station);
+                return (
+                  <Pressable
+                    key={station}
+                    style={({ pressed }) => [
+                      styles.stationCard,
+                      { opacity: pressed ? 0.75 : 1 },
+                    ]}
+                    onPress={() => handleStationPress(station)}
+                  >
+                    <MaterialIcons
+                      name="location-on"
+                      size={18}
+                      color={ACCENT_GREEN}
+                    />
+                    <Text style={styles.stationName}>{station}</Text>
+                    {stationBn ? (
+                      <Text style={styles.stationNameBn}>{stationBn}</Text>
+                    ) : null}
+                    <Text style={styles.stationSubtext}>View trains</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.disclaimerSection}>
+            <Text style={styles.disclaimerTitle}>About Our Data</Text>
+            <Text style={styles.disclaimerText}>
+              At Train Jatri, we are committed to providing accurate and
+              up-to-date train schedule information. Our data is collected from
+              official Bangladesh Railway sources.
+            </Text>
+            <Text style={styles.lastUpdated}>
+              Last updated: 24th August, 2026
+            </Text>
+          </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
     </ImageBackground>
   );
 }
@@ -526,28 +498,15 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  heroWrap: {
-    overflow: "hidden",
-    backgroundColor: "transparent",
-  },
   hero: {
-    height: 280,
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingBottom: 28,
     alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  heroLogo: {
-    width: "120%",
-    height: 300,
-    transform: [{ scale: 0.75 }],
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   searchCard: {
     backgroundColor: CARD,
     marginHorizontal: 16,
-    marginTop: -42,
+    marginTop: 0,
     borderRadius: 22,
     padding: 16,
     shadowColor: "#000",
