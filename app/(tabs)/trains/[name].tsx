@@ -2,20 +2,17 @@ import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   ActivityIndicator,
   ImageBackground,
   Pressable,
 } from "react-native";
 import { Image } from "expo-image";
-import { useLocalSearchParams, useNavigation, router } from "expo-router";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { getDataForTrain } from "@/utils/getData";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import { Fonts } from "@/constants/theme";
 import {
   isTrainSaved,
@@ -24,6 +21,15 @@ import {
 } from "@/utils/quickAccessStorage";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
 import { TrainBackButton } from "@/components/navigation/TrainBackButton";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const TABLE_HEADER = "#f5f5f5";
+const TABLE_ZEBRA = "#fafafa";
+const FIELD_BG = "#f5f5f5";
+const FOCUS = "#1877F2";
 
 interface Route {
   city: string;
@@ -77,9 +83,7 @@ export default function TrainDetailScreen() {
   const [trainData, setTrainData] = useState<TrainData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'forward' | 'reverse'>('forward');
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const [activeTab, setActiveTab] = useState<"forward" | "reverse">("forward");
 
   useEffect(() => {
     loadTrainData();
@@ -93,10 +97,10 @@ export default function TrainDetailScreen() {
 
   const handleBookmark = async () => {
     if (!trainData) return;
-    
+
     const activeRoute = trainData.forward ?? trainData.reverse;
     const trainName = activeRoute?.train_name ?? "";
-    
+
     if (isSaved) {
       await removeTrainFromQuickAccess(name);
       setIsSaved(false);
@@ -113,8 +117,8 @@ export default function TrainDetailScreen() {
     if (trainData) {
       const activeRoute = trainData.forward ?? trainData.reverse;
       const trainName = activeRoute?.train_name ?? "";
-      
-      navigation.setOptions({ 
+
+      navigation.setOptions({
         title: trainName || "Train Details",
       });
     }
@@ -149,13 +153,13 @@ export default function TrainDetailScreen() {
 
     return (
       <View style={styles.stationCell}>
-        <ThemedText style={styles.stationName}>
+        <Text style={styles.stationName}>
           {route.city.replace(/_/g, " ")}
-        </ThemedText>
+        </Text>
         {stationNameBangali ? (
-          <ThemedText style={styles.stationNameBn}>
+          <Text style={styles.stationNameBn}>
             {stationNameBangali}
-          </ThemedText>
+          </Text>
         ) : null}
       </View>
     );
@@ -165,35 +169,21 @@ export default function TrainDetailScreen() {
     const offDay = getOffDay(direction.days);
 
     return (
-      <View
-        style={[styles.routeSection, { backgroundColor: colors.background }]}
-      >
-        <ThemedText style={styles.routePath}>{direction.path}</ThemedText>
-        <ThemedText style={styles.offDay}>বন্ধের দিন: {offDay}</ThemedText>
+      <View style={styles.routeSection}>
+        <Text style={styles.routePath}>{direction.path}</Text>
+        <Text style={styles.offDay}>বন্ধের দিন: {offDay}</Text>
 
-        <View
-          style={[
-            styles.table,
-            { backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#fff" },
-          ]}
-        >
-          <View
-            style={[
-              styles.tableHeader,
-              {
-                backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#f5f5f5",
-              },
-            ]}
-          >
-            <ThemedText style={[styles.tableHeaderText, styles.stationColumn]}>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, styles.stationColumn]}>
               Station
-            </ThemedText>
-            <ThemedText style={[styles.tableHeaderText, styles.timeColumn]}>
+            </Text>
+            <Text style={[styles.tableHeaderText, styles.timeColumn]}>
               Arrival
-            </ThemedText>
-            <ThemedText style={[styles.tableHeaderText, styles.timeColumn]}>
+            </Text>
+            <Text style={[styles.tableHeaderText, styles.timeColumn]}>
               Departure
-            </ThemedText>
+            </Text>
           </View>
 
           {direction.routes.map((route, index) => (
@@ -201,24 +191,22 @@ export default function TrainDetailScreen() {
               key={index}
               style={[
                 styles.tableRow,
-                index % 2 === 1 && {
-                  backgroundColor: colorScheme === "dark" ? "#222" : "#fafafa",
-                },
+                index % 2 === 1 && styles.tableRowAlt,
               ]}
             >
               <View style={styles.stationColumn}>
                 {renderStationName(route)}
               </View>
-              <ThemedText style={[styles.tableCell, styles.timeColumn]}>
+              <Text style={[styles.tableCell, styles.timeColumn]}>
                 {route.arrival_time
                   ? route.arrival_time.replace(" BST", "")
                   : "-"}
-              </ThemedText>
-              <ThemedText style={[styles.tableCell, styles.timeColumn]}>
+              </Text>
+              <Text style={[styles.tableCell, styles.timeColumn]}>
                 {route.departure_time
                   ? route.departure_time.replace(" BST", "")
                   : "-"}
-              </ThemedText>
+              </Text>
             </View>
           ))}
         </View>
@@ -233,16 +221,16 @@ export default function TrainDetailScreen() {
         style={styles.backgroundImage}
         imageStyle={styles.backgroundImageStyle}
       >
-        <ThemedView
+        <View
           style={[styles.container, { backgroundColor: "transparent" }]}
         >
           <View style={styles.loadingContainer}>
             <View style={styles.buttonSection}>
               <TrainBackButton />
             </View>
-            <ActivityIndicator size="large" color={colors.tint} />
+            <ActivityIndicator size="large" color={FOCUS} />
           </View>
-        </ThemedView>
+        </View>
       </ImageBackground>
     );
   }
@@ -254,13 +242,13 @@ export default function TrainDetailScreen() {
         style={styles.backgroundImage}
         imageStyle={styles.backgroundImageStyle}
       >
-        <ThemedView
+        <View
           style={[styles.container, { backgroundColor: "transparent" }]}
         >
           <View style={styles.loadingContainer}>
-            <ThemedText>Train data not found.</ThemedText>
+            <Text style={styles.notFoundText}>Train data not found.</Text>
           </View>
-        </ThemedView>
+        </View>
       </ImageBackground>
     );
   }
@@ -278,7 +266,7 @@ export default function TrainDetailScreen() {
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView
+      <View
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
         <ScrollView style={styles.scrollView}>
@@ -287,26 +275,22 @@ export default function TrainDetailScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
-                {
-                  backgroundColor: isSaved
-                    ? "#1877F2"
-                    : colorScheme === "dark"
-                    ? "#2a2a2a"
-                    : "#f5f5f5",
-                  opacity: pressed ? 0.7 : 1,
-                },
+                isSaved ? styles.saveButtonSaved : styles.saveButtonUnsaved,
+                { opacity: pressed ? 0.7 : 1 },
               ]}
               onPress={handleBookmark}
             >
-              <ThemedText
+              <Text
                 style={[
                   styles.saveButtonText,
-                  { color: isSaved ? "#fff" : colors.text },
+                  isSaved
+                    ? styles.saveButtonTextSaved
+                    : styles.saveButtonTextUnsaved,
                 ]}
               >
                 {isSaved ? "⭐ " : "☆ "}
                 {isSaved ? "Saved to Quick Access" : "Save to Quick Access"}
-              </ThemedText>
+              </Text>
             </Pressable>
           </View>
 
@@ -317,13 +301,13 @@ export default function TrainDetailScreen() {
               contentFit="contain"
             />
             <View style={styles.titleContainer}>
-              <ThemedText style={[styles.title, { fontFamily: Fonts.rounded }]}>
+              <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
                 {trainName} Train Schedule
-              </ThemedText>
+              </Text>
               {trainNameBn && (
-                <ThemedText style={styles.titleBn}>
+                <Text style={styles.titleBn}>
                   {trainNameBn} ট্রেনের সময়সূচী
-                </ThemedText>
+                </Text>
               )}
             </View>
           </View>
@@ -337,39 +321,39 @@ export default function TrainDetailScreen() {
                 <Pressable
                   style={[
                     styles.tabButton,
-                    activeTab === 'forward' && styles.tabButtonActive,
+                    activeTab === "forward" && styles.tabButtonActive,
                   ]}
-                  onPress={() => setActiveTab('forward')}
+                  onPress={() => setActiveTab("forward")}
                 >
-                  <ThemedText
+                  <Text
                     style={[
                       styles.tabButtonText,
-                      activeTab === 'forward' && styles.tabButtonTextActive,
+                      activeTab === "forward" && styles.tabButtonTextActive,
                     ]}
                   >
                     {trainData.forward.path}
-                  </ThemedText>
+                  </Text>
                 </Pressable>
                 <Pressable
                   style={[
                     styles.tabButton,
-                    activeTab === 'reverse' && styles.tabButtonActive,
+                    activeTab === "reverse" && styles.tabButtonActive,
                   ]}
-                  onPress={() => setActiveTab('reverse')}
+                  onPress={() => setActiveTab("reverse")}
                 >
-                  <ThemedText
+                  <Text
                     style={[
                       styles.tabButtonText,
-                      activeTab === 'reverse' && styles.tabButtonTextActive,
+                      activeTab === "reverse" && styles.tabButtonTextActive,
                     ]}
                   >
                     {trainData.reverse.path}
-                  </ThemedText>
+                  </Text>
                 </Pressable>
               </View>
-              
-              {activeTab === 'forward' && renderRouteTable(trainData.forward)}
-              {activeTab === 'reverse' && renderRouteTable(trainData.reverse)}
+
+              {activeTab === "forward" && renderRouteTable(trainData.forward)}
+              {activeTab === "reverse" && renderRouteTable(trainData.reverse)}
             </View>
           ) : (
             <>
@@ -382,7 +366,7 @@ export default function TrainDetailScreen() {
 
           <View style={{ height: 40 }} />
         </ScrollView>
-      </ThemedView>
+      </View>
     </ImageBackground>
   );
 }
@@ -390,6 +374,7 @@ export default function TrainDetailScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -433,40 +418,57 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
     textTransform: "capitalize",
+    color: TEXT,
   },
   titleBn: {
     fontSize: 18,
     fontWeight: "600",
     textAlign: "center",
-    opacity: 0.8,
+    color: MUTED,
+  },
+  notFoundText: {
+    fontSize: 16,
+    color: TEXT,
   },
   saveButton: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#1877F2",
+    borderColor: FOCUS,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  saveButtonSaved: {
+    backgroundColor: FOCUS,
+  },
+  saveButtonUnsaved: {
+    backgroundColor: FIELD_BG,
+  },
   saveButtonText: {
     fontSize: 9,
     fontWeight: "600",
+  },
+  saveButtonTextSaved: {
+    color: "#fff",
+  },
+  saveButtonTextUnsaved: {
+    color: TEXT,
   },
   tabContainer: {
     marginTop: 10,
   },
   tabButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 20,
     marginBottom: 16,
     borderRadius: 8,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
     padding: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -476,13 +478,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 6,
   },
   tabButtonActive: {
-    backgroundColor: '#1877F2',
-    shadowColor: '#1877F2',
+    backgroundColor: "#1877F2",
+    shadowColor: "#1877F2",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -490,12 +492,12 @@ const styles = StyleSheet.create({
   },
   tabButtonText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
   },
   tabButtonTextActive: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
   },
   routeSection: {
     marginHorizontal: 20,
@@ -517,6 +519,7 @@ const styles = StyleSheet.create({
   table: {
     borderRadius: 12,
     overflow: "hidden",
+    backgroundColor: CARD,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -528,17 +531,23 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    backgroundColor: TABLE_HEADER,
   },
   tableHeaderText: {
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
+    color: TEXT,
   },
   tableRow: {
     flexDirection: "row",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+    backgroundColor: CARD,
+  },
+  tableRowAlt: {
+    backgroundColor: TABLE_ZEBRA,
   },
   stationColumn: {
     flex: 2,
@@ -550,6 +559,7 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     fontSize: 12,
+    color: TEXT,
   },
   stationCell: {
     flexDirection: "column",
@@ -557,10 +567,11 @@ const styles = StyleSheet.create({
   stationName: {
     fontSize: 12,
     fontWeight: "500",
+    color: TEXT,
   },
   stationNameBn: {
     fontSize: 10,
-    opacity: 0.7,
+    color: MUTED,
     marginTop: 2,
   },
 });

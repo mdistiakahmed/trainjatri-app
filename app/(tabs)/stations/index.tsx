@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   TextInput,
   Pressable,
@@ -9,15 +10,25 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
-import { createRouteUrlSlugFromStations, formatStationNameForUrl } from "@/utils/stringutils";
+import {
+  createRouteUrlSlugFromStations,
+  formatStationNameForUrl,
+} from "@/utils/stringutils";
 import { Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const FIELD_BG = "#f5f5f5";
+const PLACEHOLDER = "#9aa3af";
+const BORDER = "#111111";
+const FOCUS = "#1877F2";
+const DROPDOWN_PRESSED = "#e8f4ff";
+const DISABLED = "#999999";
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, "_");
@@ -33,8 +44,6 @@ export default function StationsScreen() {
   const [showFromDropdown, setShowFromDropdown] = useState(false);
   const [showToDropdown, setShowToDropdown] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
 
   const routes = useMemo(() => getRoutes(), []);
   const groupedRoutes = useMemo(
@@ -60,16 +69,16 @@ export default function StationsScreen() {
   // Filter to station suggestions (only show stations with routes from selected from station)
   const availableToStations = useMemo(() => {
     if (!fromStation.trim()) return [];
-    
+
     // Find the selected from station
     const selectedFromStation = stationGroups.find(
       (station) =>
         station.toLowerCase() === fromStation.toLowerCase() ||
-        getBengaliStationName(station) === fromStation
+        getBengaliStationName(station) === fromStation,
     );
-    
+
     if (!selectedFromStation) return [];
-    
+
     // Get all routes from this station
     const fromRoutes = groupedRoutes[selectedFromStation] || [];
     return fromRoutes.map((route) => route.route.split(" - ")[1]);
@@ -102,9 +111,9 @@ export default function StationsScreen() {
 
   const handleSearchRoute = () => {
     if (!fromStation) return;
-    
+
     const stationSlug = formatStationNameForUrl(fromStation);
-    
+
     if (toStation) {
       // Both stations selected - go to route detail page
       const routeSlug = createRouteUrlSlugFromStations(fromStation, toStation);
@@ -129,241 +138,218 @@ export default function StationsScreen() {
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView
+      <View
         style={[styles.container, { backgroundColor: "transparent" }]}
       >
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
         >
-        <View style={styles.header}>
-          <Image
-            source={require("@/assets/images/logo.png")}
-            style={styles.logo}
-            contentFit="contain"
-          />
-          <ThemedText
-            type="title"
-            style={[styles.title, { fontFamily: Fonts.rounded }]}
-          >
-            Railway Stations
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Find trains between stations
-          </ThemedText>
-        </View>
-
-        {/* Quick Route Search */}
-        <View style={styles.quickSearchSection}>
-          <ThemedText style={styles.quickSearchTitle}>Quick Route Search</ThemedText>
-          
-          {/* From Station */}
-          <View style={[styles.searchInputContainer, { zIndex: 2 }]}>
-            <ThemedText style={styles.inputLabel}>From Station</ThemedText>
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
-                  color: colors.text,
-                  borderWidth: fromStation ? 3 : 2,
-                  borderColor: fromStation ? "#000" : "#000",
-                },
-              ]}
-              placeholder="Enter from station / প্রারম্ভিক স্টেশন"
-              placeholderTextColor={colors.tabIconDefault}
-              value={fromStation}
-              onChangeText={(text) => {
-                setFromStation(text);
-                setShowFromDropdown(text.trim().length > 0);
-                setShowToDropdown(false); // Close to dropdown when typing in from
-              }}
-              onFocus={() => {
-                setShowToDropdown(false); // Close to dropdown
-                scrollToTop();
-                if (fromStation.trim()) setShowFromDropdown(true);
-              }}
+          <View style={styles.header}>
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={styles.logo}
+              contentFit="contain"
             />
-            {showFromDropdown && filteredFromStations.length > 0 && (
-              <View
-                style={[
-                  styles.dropdown,
-                  {
-                    backgroundColor: "#ffffff",
-                    borderColor: "#1877F2",
-                  },
-                ]}
-              >
-                <ScrollView 
-                  style={styles.dropdownScroll} 
-                  nestedScrollEnabled
-                  keyboardShouldPersistTaps="always"
-                >
-                  {filteredFromStations.map((stationName) => {
-                    const bengaliName = getBengaliStationName(stationName);
-                    return (
-                      <Pressable
-                        key={stationName}
-                        style={({ pressed }) => [
-                          styles.dropdownItem,
-                          {
-                            backgroundColor: pressed ? "#e8f4ff" : "#ffffff",
-                          },
-                        ]}
-                        onPress={() => handleFromStationSelect(stationName)}
-                      >
-                        <ThemedText style={[styles.dropdownItemText, { color: "#000" }]}>
-                          {stationName}
-                        </ThemedText>
-                        {bengaliName && (
-                          <ThemedText style={[styles.dropdownItemTextBn, { color: "#666" }]}>
-                            {bengaliName}
-                          </ThemedText>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            )}
+            <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
+              Railway Stations
+            </Text>
+            <Text style={styles.subtitle}>
+              Find trains between stations
+            </Text>
           </View>
 
-          {/* To Station */}
-          <View style={[styles.searchInputContainer, { zIndex: 1 }]}>
-            <ThemedText style={styles.inputLabel}>To Station (Optional)</ThemedText>
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
-                  color: colors.text,
-                  borderWidth: toStation ? 3 : 2,
-                  borderColor: toStation ? "#000" : "#000",
-                },
-              ]}
-              placeholder="Enter to station / গন্তব্য স্টেশন"
-              placeholderTextColor={colors.tabIconDefault}
-              value={toStation}
-              onChangeText={(text) => {
-                setToStation(text);
-                setShowToDropdown(text.trim().length > 0);
-                setShowFromDropdown(false); // Close from dropdown when typing in to
-              }}
-              onFocus={() => {
-                setShowFromDropdown(false); // Close from dropdown when focusing to station
-                scrollToTop();
-                if (toStation.trim()) setShowToDropdown(true);
-              }}
-              editable={!!fromStation}
-            />
-            {showToDropdown && fromStation && filteredToStations.length > 0 && (
-              <View
+          {/* Quick Route Search */}
+          <View style={styles.quickSearchSection}>
+            <Text style={styles.quickSearchTitle}>
+              Quick Route Search
+            </Text>
+
+            {/* From Station */}
+            <View style={[styles.searchInputContainer, { zIndex: 2 }]}>
+              <Text style={styles.inputLabel}>From Station</Text>
+              <TextInput
                 style={[
-                  styles.dropdown,
-                  {
-                    backgroundColor: "#ffffff",
-                    borderColor: "#1877F2",
-                  },
+                  styles.searchInput,
+                  { borderWidth: fromStation ? 3 : 2 },
                 ]}
-              >
-                <ScrollView 
-                  style={styles.dropdownScroll} 
-                  nestedScrollEnabled
-                  keyboardShouldPersistTaps="always"
-                >
-                  {filteredToStations.map((stationName) => {
-                    const bengaliName = getBengaliStationName(stationName);
-                    return (
-                      <Pressable
-                        key={stationName}
-                        style={({ pressed }) => [
-                          styles.dropdownItem,
-                          {
-                            backgroundColor: pressed ? "#e8f4ff" : "#ffffff",
-                          },
-                        ]}
-                        onPress={() => handleToStationSelect(stationName)}
-                      >
-                        <ThemedText style={[styles.dropdownItemText, { color: "#000" }]}>
-                          {stationName}
-                        </ThemedText>
-                        {bengaliName && (
-                          <ThemedText style={[styles.dropdownItemTextBn, { color: "#666" }]}>
-                            {bengaliName}
-                          </ThemedText>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            )}
-          </View>
-
-          {/* Search Button */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.searchButton,
-              {
-                opacity: fromStation ? (pressed ? 0.7 : 1) : 0.5,
-                backgroundColor: fromStation ? "#1877F2" : "#999",
-              },
-            ]}
-            onPress={handleSearchRoute}
-            disabled={!fromStation}
-          >
-            <ThemedText style={styles.searchButtonText}>
-              🔍 {toStation ? 'Search Trains' : 'View Station'}
-            </ThemedText>
-          </Pressable>
-        </View>
-
-        <AdPlaceholder />
-
-        {/* All Stations List */}
-        <View style={[styles.allStationsSection, { zIndex: 0 }]}>
-          <ThemedText style={styles.sectionTitle}>All Stations</ThemedText>
-        </View>
-
-        <View style={[styles.stationsGrid, { zIndex: 0 }]}>
-          {stationGroups.map((stationName) => {
-            const bengaliName = getBengaliStationName(stationName);
-            const routeCount = groupedRoutes[stationName].length;
-
-            return (
-              <Pressable
-                key={stationName}
-                style={({ pressed }) => [
-                  styles.stationCard,
-                  {
-                    backgroundColor:
-                      colorScheme === "dark" ? "#2a2a2a" : "#fff",
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-                onPress={() => handleStationPress(stationName)}
-              >
-                <View style={styles.stationInfo}>
-                  <ThemedText style={styles.stationName}>
-                    {stationName} Station
-                  </ThemedText>
-                  {bengaliName && (
-                    <ThemedText style={styles.stationNameBn}>
-                      {bengaliName} স্টেশন
-                    </ThemedText>
-                  )}
-                  <ThemedText style={styles.routeCount}>
-                    {routeCount} train route{routeCount !== 1 ? "s" : ""}{" "}
-                    available
-                  </ThemedText>
+                placeholder="Enter from station / প্রারম্ভিক স্টেশন"
+                placeholderTextColor={PLACEHOLDER}
+                value={fromStation}
+                onChangeText={(text) => {
+                  setFromStation(text);
+                  setShowFromDropdown(text.trim().length > 0);
+                  setShowToDropdown(false); // Close to dropdown when typing in from
+                }}
+                onFocus={() => {
+                  setShowToDropdown(false); // Close to dropdown
+                  scrollToTop();
+                  if (fromStation.trim()) setShowFromDropdown(true);
+                }}
+              />
+              {showFromDropdown && filteredFromStations.length > 0 && (
+                <View style={styles.dropdown}>
+                  <ScrollView
+                    style={styles.dropdownScroll}
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="always"
+                  >
+                    {filteredFromStations.map((stationName) => {
+                      const bengaliName = getBengaliStationName(stationName);
+                      return (
+                        <Pressable
+                          key={stationName}
+                          style={({ pressed }) => [
+                            styles.dropdownItem,
+                            {
+                              backgroundColor: pressed
+                                ? DROPDOWN_PRESSED
+                                : CARD,
+                            },
+                          ]}
+                          onPress={() => handleFromStationSelect(stationName)}
+                        >
+                          <Text style={styles.dropdownItemText}>
+                            {stationName}
+                          </Text>
+                          {bengaliName && (
+                            <Text style={styles.dropdownItemTextBn}>
+                              {bengaliName}
+                            </Text>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
-              </Pressable>
-            );
-          })}
-        </View>
+              )}
+            </View>
+
+            {/* To Station */}
+            <View style={[styles.searchInputContainer, { zIndex: 1 }]}>
+              <Text style={styles.inputLabel}>
+                To Station (Optional)
+              </Text>
+              <TextInput
+                style={[
+                  styles.searchInput,
+                  { borderWidth: toStation ? 3 : 2 },
+                ]}
+                placeholder="Enter to station / গন্তব্য স্টেশন"
+                placeholderTextColor={PLACEHOLDER}
+                value={toStation}
+                onChangeText={(text) => {
+                  setToStation(text);
+                  setShowToDropdown(text.trim().length > 0);
+                  setShowFromDropdown(false); // Close from dropdown when typing in to
+                }}
+                onFocus={() => {
+                  setShowFromDropdown(false); // Close from dropdown when focusing to station
+                  scrollToTop();
+                  if (toStation.trim()) setShowToDropdown(true);
+                }}
+                editable={!!fromStation}
+              />
+              {showToDropdown &&
+                fromStation &&
+                filteredToStations.length > 0 && (
+                  <View style={styles.dropdown}>
+                    <ScrollView
+                      style={styles.dropdownScroll}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="always"
+                    >
+                      {filteredToStations.map((stationName) => {
+                        const bengaliName = getBengaliStationName(stationName);
+                        return (
+                          <Pressable
+                            key={stationName}
+                            style={({ pressed }) => [
+                              styles.dropdownItem,
+                              {
+                                backgroundColor: pressed
+                                  ? DROPDOWN_PRESSED
+                                  : CARD,
+                              },
+                            ]}
+                            onPress={() => handleToStationSelect(stationName)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {stationName}
+                            </Text>
+                            {bengaliName && (
+                              <Text style={styles.dropdownItemTextBn}>
+                                {bengaliName}
+                              </Text>
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
+            </View>
+
+            {/* Search Button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.searchButton,
+                {
+                  opacity: fromStation ? (pressed ? 0.7 : 1) : 0.5,
+                  backgroundColor: fromStation ? FOCUS : DISABLED,
+                },
+              ]}
+              onPress={handleSearchRoute}
+              disabled={!fromStation}
+            >
+              <Text style={styles.searchButtonText}>
+                🔍 {toStation ? "Search Trains" : "View Station"}
+              </Text>
+            </Pressable>
+          </View>
+
+          <AdPlaceholder />
+
+          {/* All Stations List */}
+          <View style={[styles.allStationsSection, { zIndex: 0 }]}>
+            <Text style={styles.sectionTitle}>All Stations</Text>
+          </View>
+
+          <View style={[styles.stationsGrid, { zIndex: 0 }]}>
+            {stationGroups.map((stationName) => {
+              const bengaliName = getBengaliStationName(stationName);
+              const routeCount = groupedRoutes[stationName].length;
+
+              return (
+                <Pressable
+                  key={stationName}
+                  style={({ pressed }) => [
+                    styles.stationCard,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
+                  onPress={() => handleStationPress(stationName)}
+                >
+                  <View style={styles.stationInfo}>
+                    <Text style={styles.stationName}>
+                      {stationName} Station
+                    </Text>
+                    {bengaliName && (
+                      <Text style={styles.stationNameBn}>
+                        {bengaliName} স্টেশন
+                      </Text>
+                    )}
+                    <Text style={styles.routeCount}>
+                      {routeCount} train route{routeCount !== 1 ? "s" : ""}{" "}
+                      available
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </ImageBackground>
   );
 }
@@ -371,6 +357,7 @@ export default function StationsScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -397,11 +384,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 8,
+    color: TEXT,
   },
   subtitle: {
     fontSize: 16,
     textAlign: "center",
-    opacity: 0.7,
+    color: MUTED,
   },
   quickSearchSection: {
     paddingHorizontal: 20,
@@ -411,6 +399,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 12,
+    color: TEXT,
   },
   searchInputContainer: {
     position: "relative",
@@ -420,7 +409,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
-    opacity: 0.8,
+    color: TEXT,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -432,7 +421,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     borderWidth: 2,
-    borderColor: "#000",
+    borderColor: BORDER,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
   },
   dropdown: {
     position: "absolute",
@@ -442,6 +433,8 @@ const styles = StyleSheet.create({
     maxHeight: 250,
     borderRadius: 10,
     borderWidth: 2,
+    backgroundColor: CARD,
+    borderColor: FOCUS,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -460,13 +453,15 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 15,
     fontWeight: "500",
+    color: TEXT,
   },
   dropdownItemTextBn: {
     fontSize: 13,
     marginTop: 2,
+    color: MUTED,
   },
   searchButton: {
-    backgroundColor: "#1877F2",
+    backgroundColor: FOCUS,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -491,6 +486,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: TEXT,
   },
   scrollView: {
     flex: 1,
@@ -503,6 +499,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    backgroundColor: CARD,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -516,14 +513,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
+    color: TEXT,
   },
   stationNameBn: {
     fontSize: 14,
     marginBottom: 6,
-    opacity: 0.8,
+    color: MUTED,
   },
   routeCount: {
     fontSize: 12,
-    opacity: 0.6,
+    color: MUTED,
   },
 });

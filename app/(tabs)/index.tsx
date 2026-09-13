@@ -5,13 +5,12 @@ import {
   ScrollView,
   Pressable,
   TextInput,
+  Text,
   ImageBackground,
 } from "react-native";
 import { Image } from "expo-image";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { getRoutes, groupRoutesByStartStation } from "@/utils/stationsData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
@@ -20,12 +19,18 @@ import {
   createRouteUrlSlugFromStations,
   formatStationNameForUrl,
 } from "@/utils/stringutils";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 const PRIMARY_BLUE = "#1D61C4";
 const ACCENT_GREEN = "#2E9B4A";
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const FIELD_BG = "#f7f8fa";
+const PLACEHOLDER = "#9aa3af";
+const DIVIDER = "#eceff3";
+const DROPDOWN_PRESSED = "#e8f4ff";
+const PIN_BG = "#E7F1FF";
 
 const majorStations = [
   "Dhaka",
@@ -52,10 +57,6 @@ const getBengaliStationName = (englishName: string) =>
   ] || "";
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-  const isDark = colorScheme === "dark";
-
   const [fromStation, setFromStation] = useState("");
   const [toStation, setToStation] = useState("");
   const [showFromDropdown, setShowFromDropdown] = useState(false);
@@ -146,9 +147,6 @@ export default function HomeScreen() {
     router.push(`/(tabs)/stations/${stationSlug}/${routeSlug}` as any);
   };
 
-  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
-  const fieldBg = isDark ? "#2a2a2a" : "#f7f8fa";
-
   const renderStationField = (
     label: string,
     placeholder: string,
@@ -168,7 +166,7 @@ export default function HomeScreen() {
         style={[
           styles.stationField,
           {
-            backgroundColor: fieldBg,
+            backgroundColor: FIELD_BG,
             borderColor: focused ? PRIMARY_BLUE : "transparent",
             borderWidth: focused ? 2 : 0,
             opacity: editable ? 1 : 0.55,
@@ -187,11 +185,11 @@ export default function HomeScreen() {
           <MaterialIcons name="location-on" size={18} color={PRIMARY_BLUE} />
         </View>
         <View style={styles.fieldTextWrap}>
-          <ThemedText style={styles.fieldLabel}>{label}</ThemedText>
+          <Text style={styles.fieldLabel}>{label}</Text>
           <TextInput
-            style={[styles.fieldInput, { color: colors.text }]}
+            style={styles.fieldInput}
             placeholder={placeholder}
-            placeholderTextColor={isDark ? "#888" : "#9aa3af"}
+            placeholderTextColor={PLACEHOLDER}
             value={value}
             editable={editable}
             onChangeText={(text) => {
@@ -204,13 +202,13 @@ export default function HomeScreen() {
             onBlur={() => setFocused(false)}
           />
         </View>
-        <MaterialIcons name="chevron-right" size={22} color="#b0b7c3" />
+        <MaterialIcons name="chevron-right" size={22} color={MUTED} />
       </Pressable>
       {showDropdown && suggestions.length > 0 && (
         <View
           style={[
             styles.dropdown,
-            { backgroundColor: "#fff", borderColor: PRIMARY_BLUE },
+            { backgroundColor: CARD, borderColor: PRIMARY_BLUE },
           ]}
         >
           <ScrollView
@@ -225,21 +223,17 @@ export default function HomeScreen() {
                   key={stationName}
                   style={({ pressed }) => [
                     styles.dropdownItem,
-                    { backgroundColor: pressed ? "#e8f4ff" : "#fff" },
+                    { backgroundColor: pressed ? DROPDOWN_PRESSED : CARD },
                   ]}
                   onPress={() => onSelect(stationName)}
                 >
-                  <ThemedText
-                    style={[styles.dropdownItemText, { color: "#111" }]}
-                  >
+                  <Text style={styles.dropdownItemText}>
                     {stationName}
-                  </ThemedText>
+                  </Text>
                   {bengaliName ? (
-                    <ThemedText
-                      style={[styles.dropdownItemTextBn, { color: "#666" }]}
-                    >
+                    <Text style={styles.dropdownItemTextBn}>
                       {bengaliName}
-                    </ThemedText>
+                    </Text>
                   ) : null}
                 </Pressable>
               );
@@ -256,7 +250,7 @@ export default function HomeScreen() {
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-    <ThemedView style={[styles.container, { backgroundColor: "transparent" }]}>
+    <View style={styles.container}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -273,7 +267,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={[styles.searchCard, { backgroundColor: cardBg }]}>
+        <View style={styles.searchCard}>
           {renderStationField(
             "From / যাত্রা শুরু",
             "Select station",
@@ -332,9 +326,9 @@ export default function HomeScreen() {
             disabled={!fromStation}
           >
             <MaterialIcons name="search" size={20} color="#fff" />
-            <ThemedText style={styles.searchButtonText}>
+            <Text style={styles.searchButtonText}>
               View Trains
-            </ThemedText>
+            </Text>
           </Pressable>
         </View>
 
@@ -377,13 +371,13 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Popular Trains
-            </ThemedText>
+            </Text>
             <Pressable onPress={() => router.push("/(tabs)/trains")}>
-              <ThemedText style={styles.viewAllLink}>
+              <Text style={styles.viewAllLink}>
                 View All →
-              </ThemedText>
+              </Text>
             </Pressable>
           </View>
           {popularTrains.map((trainName) => {
@@ -397,7 +391,7 @@ export default function HomeScreen() {
                 key={trainName}
                 style={({ pressed }) => [
                   styles.listCard,
-                  { backgroundColor: cardBg, opacity: pressed ? 0.75 : 1 },
+                  { opacity: pressed ? 0.75 : 1 },
                 ]}
                 onPress={() => handleTrainPress(trainName)}
               >
@@ -405,18 +399,18 @@ export default function HomeScreen() {
                   <MaterialIcons name="train" size={20} color={PRIMARY_BLUE} />
                 </View>
                 <View style={styles.listCardText}>
-                  <ThemedText style={styles.listCardTitle}>
+                  <Text style={styles.listCardTitle}>
                     {cleanName}
-                  </ThemedText>
+                  </Text>
                   {trainNameBn ? (
-                    <ThemedText style={styles.listCardBn}>
+                    <Text style={styles.listCardBn}>
                       {trainNameBn}
-                    </ThemedText>
+                    </Text>
                   ) : null}
                 </View>
-                <ThemedText style={styles.listCardLink}>
+                <Text style={styles.listCardLink}>
                   View →
-                </ThemedText>
+                </Text>
               </Pressable>
             );
           })}
@@ -426,13 +420,13 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Major Stations
-            </ThemedText>
+            </Text>
             <Pressable onPress={() => router.push("/(tabs)/stations")}>
-              <ThemedText style={styles.viewAllLink}>
+              <Text style={styles.viewAllLink}>
                 View All →
-              </ThemedText>
+              </Text>
             </Pressable>
           </View>
           <View style={styles.stationsGrid}>
@@ -443,7 +437,7 @@ export default function HomeScreen() {
                   key={station}
                   style={({ pressed }) => [
                     styles.stationCard,
-                    { backgroundColor: cardBg, opacity: pressed ? 0.75 : 1 },
+                    { opacity: pressed ? 0.75 : 1 },
                   ]}
                   onPress={() => handleStationPress(station)}
                 >
@@ -452,15 +446,15 @@ export default function HomeScreen() {
                     size={18}
                     color={ACCENT_GREEN}
                   />
-                  <ThemedText style={styles.stationName}>{station}</ThemedText>
+                  <Text style={styles.stationName}>{station}</Text>
                   {stationBn ? (
-                    <ThemedText style={styles.stationNameBn}>
+                    <Text style={styles.stationNameBn}>
                       {stationBn}
-                    </ThemedText>
+                    </Text>
                   ) : null}
-                <ThemedText style={styles.stationSubtext}>
+                <Text style={styles.stationSubtext}>
                   View trains
-                </ThemedText>
+                </Text>
                 </Pressable>
               );
             })}
@@ -468,21 +462,21 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.disclaimerSection}>
-          <ThemedText style={styles.disclaimerTitle}>
+          <Text style={styles.disclaimerTitle}>
             About Our Data
-          </ThemedText>
-          <ThemedText style={styles.disclaimerText}>
+          </Text>
+          <Text style={styles.disclaimerText}>
             At Train Jatri, we are committed to providing accurate and
             up-to-date train schedule information. Our data is collected from
             official Bangladesh Railway sources.
-          </ThemedText>
-          <ThemedText style={styles.lastUpdated}>
+          </Text>
+          <Text style={styles.lastUpdated}>
             Last updated: 24th August, 2026
-          </ThemedText>
+          </Text>
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>
-    </ThemedView>
+    </View>
     </ImageBackground>
   );
 }
@@ -513,8 +507,8 @@ function QuickAction({
       <View style={[styles.quickCircle, { backgroundColor: bg }]}>
         <MaterialIcons name={icon} size={26} color={iconColor} />
       </View>
-      <ThemedText style={styles.quickLabel}>{label}</ThemedText>
-      <ThemedText style={styles.quickLabelBn}>{labelBn}</ThemedText>
+      <Text style={styles.quickLabel}>{label}</Text>
+      <Text style={styles.quickLabelBn}>{labelBn}</Text>
     </Pressable>
   );
 }
@@ -551,6 +545,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.75 }],
   },
   searchCard: {
+    backgroundColor: CARD,
     marginHorizontal: 16,
     marginTop: -42,
     borderRadius: 22,
@@ -586,18 +581,19 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 11,
-    color: "#8a94a6",
     fontWeight: "600",
+    color: MUTED,
   },
   fieldInput: {
     fontSize: 15,
     fontWeight: "600",
     paddingVertical: 2,
     paddingHorizontal: 0,
+    color: TEXT,
   },
   fieldDivider: {
     height: 1,
-    backgroundColor: "#eceff3",
+    backgroundColor: DIVIDER,
     marginVertical: 8,
     marginLeft: 56,
   },
@@ -624,10 +620,12 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 15,
     fontWeight: "600",
+    color: TEXT,
   },
   dropdownItemTextBn: {
     fontSize: 13,
     marginTop: 2,
+    color: MUTED,
   },
   searchButton: {
     marginTop: 14,
@@ -667,12 +665,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     lineHeight: 14,
+    color: TEXT,
   },
   quickLabelBn: {
     fontSize: 10,
     fontWeight: "600",
     textAlign: "center",
-    opacity: 0.7,
+    color: MUTED,
     marginTop: 2,
   },
   section: {
@@ -689,6 +688,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "800",
+    color: TEXT,
   },
   viewAllLink: {
     fontSize: 14,
@@ -701,6 +701,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     marginBottom: 10,
+    backgroundColor: CARD,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -711,7 +712,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#E7F1FF",
+    backgroundColor: PIN_BG,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -723,10 +724,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     textTransform: "capitalize",
+    color: TEXT,
   },
   listCardBn: {
     fontSize: 13,
-    opacity: 0.7,
+    color: MUTED,
     marginTop: 2,
   },
   listCardLink: {
@@ -744,6 +746,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     alignItems: "center",
+    backgroundColor: CARD,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -754,15 +757,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     marginTop: 6,
+    color: TEXT,
   },
   stationNameBn: {
     fontSize: 13,
-    opacity: 0.7,
+    color: MUTED,
     marginTop: 2,
   },
   stationSubtext: {
     fontSize: 12,
-    opacity: 0.55,
+    color: MUTED,
     marginTop: 2,
   },
   disclaimerSection: {
@@ -774,15 +778,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     marginBottom: 8,
+    color: TEXT,
   },
   disclaimerText: {
     fontSize: 13,
-    opacity: 0.75,
+    color: MUTED,
     lineHeight: 20,
   },
   lastUpdated: {
     fontSize: 12,
-    opacity: 0.5,
+    color: MUTED,
     marginTop: 8,
   },
 });

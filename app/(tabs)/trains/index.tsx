@@ -2,21 +2,27 @@ import React, { useState } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   Pressable,
   ImageBackground,
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const FIELD_BG = "#f5f5f5";
+const PLACEHOLDER = "#9aa3af";
+const LINK = "#4f46e5";
+const BORDER = "#111111";
+const FOCUS = "#1877F2";
 
 const stripBracketContent = (name: string) => {
   return name.replace(/\s*\(.*?\)\s*/g, "").trim();
@@ -25,8 +31,6 @@ const stripBracketContent = (name: string) => {
 export default function TrainsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
 
   const filteredTrains = uniqueTrainNames.filter((trainName) => {
     const cleanName = stripBracketContent(trainName);
@@ -52,10 +56,8 @@ export default function TrainsScreen() {
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView
-        style={[styles.container, { backgroundColor: "transparent" }]}
-      >
-        <ScrollView 
+      <View style={styles.container}>
+        <ScrollView
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
         >
@@ -65,15 +67,12 @@ export default function TrainsScreen() {
               style={styles.logo}
               contentFit="contain"
             />
-            <ThemedText
-              type="title"
-              style={[styles.title, { fontFamily: Fonts.rounded }]}
-            >
+            <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
               Trains Schedule
-            </ThemedText>
-            <ThemedText style={styles.subtitle}>
+            </Text>
+            <Text style={styles.subtitle}>
               Discover trains across Bangladesh
-            </ThemedText>
+            </Text>
           </View>
 
           <View style={styles.searchContainer}>
@@ -81,14 +80,12 @@ export default function TrainsScreen() {
               style={[
                 styles.searchInput,
                 {
-                  backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
-                  color: colors.text,
                   borderWidth: isSearchFocused ? 3 : 2,
-                  borderColor: isSearchFocused ? "#1877F2" : "#000",
+                  borderColor: isSearchFocused ? FOCUS : BORDER,
                 },
               ]}
               placeholder="Search train name / ট্রেন সার্চ করুন"
-              placeholderTextColor={colors.tabIconDefault}
+              placeholderTextColor={PLACEHOLDER}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onFocus={() => setIsSearchFocused(true)}
@@ -109,30 +106,22 @@ export default function TrainsScreen() {
                   key={trainName}
                   style={({ pressed }) => [
                     styles.trainCard,
-                    {
-                      backgroundColor:
-                        colorScheme === "dark" ? "#2a2a2a" : "#fff",
-                      opacity: pressed ? 0.7 : 1,
-                    },
+                    { opacity: pressed ? 0.7 : 1 },
                   ]}
                   onPress={() => handleTrainPress(trainName)}
                 >
-                  <ThemedText style={styles.trainName}>{cleanName}</ThemedText>
+                  <Text style={styles.trainName}>{cleanName}</Text>
                   {bengaliName && (
-                    <ThemedText style={styles.trainNameBn}>
-                      {bengaliName}
-                    </ThemedText>
+                    <Text style={styles.trainNameBn}>{bengaliName}</Text>
                   )}
-                  <ThemedText style={styles.viewDetails}>
-                    View Details →
-                  </ThemedText>
+                  <Text style={styles.viewDetails}>View Details →</Text>
                 </Pressable>
               );
             })}
           </View>
           <View style={{ height: 40 }} />
         </ScrollView>
-      </ThemedView>
+      </View>
     </ImageBackground>
   );
 }
@@ -140,6 +129,7 @@ export default function TrainsScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -166,11 +156,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 8,
+    color: TEXT,
   },
   subtitle: {
     fontSize: 16,
     textAlign: "center",
-    opacity: 0.7,
+    color: MUTED,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -181,6 +172,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     fontSize: 16,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
   },
   trainsGrid: {
     paddingHorizontal: 20,
@@ -190,6 +183,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    backgroundColor: CARD,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -201,15 +195,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 4,
     textTransform: "capitalize",
+    color: TEXT,
   },
   trainNameBn: {
     fontSize: 16,
     marginBottom: 8,
-    opacity: 0.8,
+    color: MUTED,
   },
   viewDetails: {
     fontSize: 14,
-    color: "#4f46e5",
+    color: LINK,
     fontWeight: "500",
     marginTop: 4,
   },

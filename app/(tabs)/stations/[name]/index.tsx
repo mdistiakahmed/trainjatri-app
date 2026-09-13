@@ -1,33 +1,43 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   Pressable,
   TextInput,
   ImageBackground,
   Keyboard,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useNavigation, router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { formatStationName, getRoutesForStation } from '@/utils/stationsData';
-import { cityEnBnMapping } from '@/utils/stationNameEnBnMapping';
-import { createRouteUrlSlugFromStations, formatStationNameForUrl } from '@/utils/stringutils';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { Fonts } from '@/constants/theme';
+} from "react-native";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
+import { formatStationName, getRoutesForStation } from "@/utils/stationsData";
+import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
+import {
+  createRouteUrlSlugFromStations,
+  formatStationNameForUrl,
+} from "@/utils/stringutils";
+import { Fonts } from "@/constants/theme";
 import {
   isStationSaved,
   saveStationToQuickAccess,
   removeStationFromQuickAccess,
-} from '@/utils/quickAccessStorage';
-import AdPlaceholder from '@/components/ads/AdPlaceholder';
-import { SmartBackButton } from '@/components/navigation/SmartBackButton';
+} from "@/utils/quickAccessStorage";
+import AdPlaceholder from "@/components/ads/AdPlaceholder";
+import { SmartBackButton } from "@/components/navigation/SmartBackButton";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const FIELD_BG = "#f5f5f5";
+const PLACEHOLDER = "#9aa3af";
+const BORDER = "#111111";
+const FOCUS = "#1877F2";
+const LINK = "#4f46e5";
 
 const stationNameToMappingKey = (name: string) =>
-  name.trim().replace(/\s+/g, '_');
+  name.trim().replace(/\s+/g, "_");
 
 const getBengaliStationName = (englishName: string) => {
   const bn =
@@ -35,32 +45,33 @@ const getBengaliStationName = (englishName: string) => {
     cityEnBnMapping[
       stationNameToMappingKey(englishName) as keyof typeof cityEnBnMapping
     ];
-  return bn || '';
+  return bn || "";
 };
 
 export default function StationDetailScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
 
-  const stationName = useMemo(() => formatStationName(name || ''), [name]);
+  const stationName = useMemo(() => formatStationName(name || ""), [name]);
   const routes = useMemo(() => getRoutesForStation(stationName), [stationName]);
-  const stationNameBn = useMemo(() => getBengaliStationName(stationName), [stationName]);
+  const stationNameBn = useMemo(
+    () => getBengaliStationName(stationName),
+    [stationName],
+  );
 
   useEffect(() => {
     navigation.setOptions({ title: `${stationName} Station` });
     checkIfSaved();
 
     // Keyboard listeners
-    const keyboardWillShow = Keyboard.addListener('keyboardDidShow', (e) => {
+    const keyboardWillShow = Keyboard.addListener("keyboardDidShow", (e) => {
       setKeyboardHeight(e.endCoordinates.height);
     });
-    const keyboardWillHide = Keyboard.addListener('keyboardDidHide', () => {
+    const keyboardWillHide = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0);
     });
 
@@ -88,13 +99,13 @@ export default function StationDetailScreen() {
     }
   };
 
-  const availableDestinations = useMemo(() => 
-    routes.map((route) => route.route.split(' - ')[1]),
-    [routes]
+  const availableDestinations = useMemo(
+    () => routes.map((route) => route.route.split(" - ")[1]),
+    [routes],
   );
 
   const filteredRoutes = routes.filter((route) => {
-    const destination = route.route.split(' - ')[1];
+    const destination = route.route.split(" - ")[1];
     const destinationBn = getBengaliStationName(destination);
     const query = searchQuery.toLowerCase();
     return (
@@ -111,12 +122,14 @@ export default function StationDetailScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/snowflakes.png')}
+      source={require("@/assets/images/snowflakes.png")}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <ScrollView 
+      <View
+        style={[styles.container, { backgroundColor: "transparent" }]}
+      >
+        <ScrollView
           style={styles.mainScrollView}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollViewContent}
@@ -126,64 +139,53 @@ export default function StationDetailScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
-                {
-                  backgroundColor: isSaved
-                    ? '#1877F2'
-                    : colorScheme === 'dark'
-                    ? '#2a2a2a'
-                    : '#f5f5f5',
-                  opacity: pressed ? 0.7 : 1,
-                },
+                isSaved ? styles.saveButtonSaved : styles.saveButtonUnsaved,
+                { opacity: pressed ? 0.7 : 1 },
               ]}
               onPress={handleBookmark}
             >
-              <ThemedText
+              <Text
                 style={[
                   styles.saveButtonText,
-                  { color: isSaved ? '#fff' : colors.text },
+                  isSaved
+                    ? styles.saveButtonTextSaved
+                    : styles.saveButtonTextUnsaved,
                 ]}
               >
-                {isSaved ? '⭐ ' : '☆ '}
-                {isSaved ? 'Saved to Quick Access' : 'Save to Quick Access'}
-              </ThemedText>
+                {isSaved ? "⭐ " : "☆ "}
+                {isSaved ? "Saved to Quick Access" : "Save to Quick Access"}
+              </Text>
             </Pressable>
           </View>
 
           <View style={styles.header}>
             <Image
-              source={require('@/assets/images/logo.png')}
+              source={require("@/assets/images/logo.png")}
               style={styles.logo}
               contentFit="contain"
             />
-            <ThemedText
-              type="title"
-              style={[styles.title, { fontFamily: Fonts.rounded }]}
-            >
+            <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
               {stationName} Station
-            </ThemedText>
+            </Text>
             {stationNameBn && (
-              <ThemedText style={styles.titleBn}>
+              <Text style={styles.titleBn}>
                 {stationNameBn} স্টেশন
-              </ThemedText>
+              </Text>
             )}
-            <ThemedText style={styles.subtitle}>
-              {routes.length} train route{routes.length !== 1 ? 's' : ''} available
-            </ThemedText>
+            <Text style={styles.subtitle}>
+              {routes.length} train route{routes.length !== 1 ? "s" : ""}{" "}
+              available
+            </Text>
           </View>
 
           <View style={styles.searchContainer}>
             <TextInput
               style={[
                 styles.searchInput,
-                {
-                  backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-                  color: colors.text,
-                  borderWidth: isSearchFocused ? 3 : 3,
-                  borderColor: isSearchFocused ? '#1877F2' : '#000',
-                },
+                { borderColor: isSearchFocused ? FOCUS : BORDER },
               ]}
               placeholder="Search destination / গন্তব্য সার্চ করুন"
-              placeholderTextColor={colors.tabIconDefault}
+              placeholderTextColor={PLACEHOLDER}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onFocus={() => setIsSearchFocused(true)}
@@ -196,7 +198,7 @@ export default function StationDetailScreen() {
           <View style={styles.routesList}>
             {filteredRoutes.length > 0 ? (
               filteredRoutes.map((route, index) => {
-                const [from, to] = route.route.split(' - ');
+                const [from, to] = route.route.split(" - ");
                 const toBengali = getBengaliStationName(to);
 
                 return (
@@ -204,42 +206,43 @@ export default function StationDetailScreen() {
                     key={index}
                     style={({ pressed }) => [
                       styles.routeCard,
-                      {
-                        backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#fff',
-                        opacity: pressed ? 0.7 : 1,
-                      },
+                      { opacity: pressed ? 0.7 : 1 },
                     ]}
                     onPress={() => handleDestinationPress(to)}
                   >
                     <View style={styles.routeInfo}>
                       <View style={styles.routeHeader}>
-                        <ThemedText style={styles.fromStation}>{from}</ThemedText>
-                        <ThemedText style={styles.arrow}>→</ThemedText>
-                        <ThemedText style={styles.toStation}>{to}</ThemedText>
+                        <Text style={styles.fromStation}>
+                          {from}
+                        </Text>
+                        <Text style={styles.arrow}>→</Text>
+                        <Text style={styles.toStation}>{to}</Text>
                       </View>
                       {toBengali && (
-                        <ThemedText style={styles.routeBengali}>
+                        <Text style={styles.routeBengali}>
                           {getBengaliStationName(from)} থেকে {toBengali}
-                        </ThemedText>
+                        </Text>
                       )}
-                      <ThemedText style={styles.routeDescription}>
+                      <Text style={styles.routeDescription}>
                         Tap to view train schedule
-                      </ThemedText>
+                      </Text>
                     </View>
                   </Pressable>
                 );
               })
             ) : (
               <View style={styles.emptyContainer}>
-                <ThemedText style={styles.emptyText}>
+                <Text style={styles.emptyText}>
                   No routes found matching your search.
-                </ThemedText>
+                </Text>
               </View>
             )}
           </View>
-          <View style={{ height: keyboardHeight > 0 ? keyboardHeight + 40 : 40 }} />
+          <View
+            style={{ height: keyboardHeight > 0 ? keyboardHeight + 40 : 40 }}
+          />
         </ScrollView>
-      </ThemedView>
+      </View>
     </ImageBackground>
   );
 }
@@ -247,6 +250,7 @@ export default function StationDetailScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -264,31 +268,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   saveButton: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#1877F2',
-    shadowColor: '#000',
+    borderColor: FOCUS,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  saveButtonSaved: {
+    backgroundColor: FOCUS,
+  },
+  saveButtonUnsaved: {
+    backgroundColor: FIELD_BG,
+  },
   saveButtonText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  saveButtonTextSaved: {
+    color: "#fff",
+  },
+  saveButtonTextUnsaved: {
+    color: TEXT,
   },
   header: {
     paddingTop: 10,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   logo: {
     width: 150,
@@ -297,21 +313,22 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 8,
+    color: TEXT,
   },
   titleBn: {
     fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    opacity: 0.8,
+    fontWeight: "600",
+    textAlign: "center",
+    color: MUTED,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
+    textAlign: "center",
+    color: MUTED,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -322,6 +339,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     fontSize: 16,
+    borderWidth: 3,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
   },
   scrollView: {
     flex: 1,
@@ -334,51 +354,53 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    backgroundColor: CARD,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   routeInfo: {
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   routeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   fromStation: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+    color: TEXT,
   },
   arrow: {
     fontSize: 16,
     marginHorizontal: 8,
-    opacity: 0.6,
+    color: MUTED,
   },
   toStation: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4f46e5',
+    fontWeight: "600",
+    color: LINK,
   },
   routeBengali: {
     fontSize: 14,
     marginBottom: 6,
-    opacity: 0.7,
+    color: MUTED,
   },
   routeDescription: {
     fontSize: 12,
-    opacity: 0.5,
+    color: MUTED,
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 16,
-    opacity: 0.5,
-    textAlign: 'center',
+    color: MUTED,
+    textAlign: "center",
   },
 });

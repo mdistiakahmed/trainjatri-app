@@ -1,98 +1,108 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   ActivityIndicator,
   Pressable,
   ImageBackground,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useNavigation, router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { parseRouteUrlSlug, formatStationNameForUrl } from '@/utils/stringutils';
-import { getTrainsForRoute } from '@/utils/routeData';
-import { cityEnBnMapping } from '@/utils/stationNameEnBnMapping';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { Fonts } from '@/constants/theme';
+} from "react-native";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
+import {
+  parseRouteUrlSlug,
+  formatStationNameForUrl,
+} from "@/utils/stringutils";
+import { getTrainsForRoute } from "@/utils/routeData";
+import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
+import { Fonts } from "@/constants/theme";
 import {
   isRouteSaved,
   saveRouteToQuickAccess,
   removeRouteFromQuickAccess,
-} from '@/utils/quickAccessStorage';
-import AdPlaceholder from '@/components/ads/AdPlaceholder';
-import { SmartBackButton } from '@/components/navigation/SmartBackButton';
+} from "@/utils/quickAccessStorage";
+import AdPlaceholder from "@/components/ads/AdPlaceholder";
+import { SmartBackButton } from "@/components/navigation/SmartBackButton";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const FIELD_BG = "#f5f5f5";
+const FOCUS = "#1877F2";
+const LINK = "#4f46e5";
 
 const stationNameToMappingKey = (name: string) =>
-  name.trim().replace(/\s+/g, '_');
+  name.trim().replace(/\s+/g, "_");
 
 const getBengaliStationName = (englishName: string) =>
   cityEnBnMapping[
     stationNameToMappingKey(englishName) as keyof typeof cityEnBnMapping
-  ] || '';
+  ] || "";
 
 const getDayName = (day: string): string => {
   const days: Record<string, string> = {
-    'Sun': 'Sunday',
-    'Mon': 'Monday',
-    'Tue': 'Tuesday',
-    'Wed': 'Wednesday',
-    'Thu': 'Thursday',
-    'Fri': 'Friday',
-    'Sat': 'Saturday',
+    Sun: "Sunday",
+    Mon: "Monday",
+    Tue: "Tuesday",
+    Wed: "Wednesday",
+    Thu: "Thursday",
+    Fri: "Friday",
+    Sat: "Saturday",
   };
   return days[day] || day;
 };
 
 const getDayNameBengali = (day: string): string => {
   const daysBn: Record<string, string> = {
-    'Sun': 'রবিবার',
-    'Mon': 'সোমবার',
-    'Tue': 'মঙ্গলবার',
-    'Wed': 'বুধবার',
-    'Thu': 'বৃহস্পতিবার',
-    'Fri': 'শুক্রবার',
-    'Sat': 'শনিবার',
+    Sun: "রবিবার",
+    Mon: "সোমবার",
+    Tue: "মঙ্গলবার",
+    Wed: "বুধবার",
+    Thu: "বৃহস্পতিবার",
+    Fri: "শুক্রবার",
+    Sat: "শনিবার",
   };
   return daysBn[day] || day;
 };
 
-const getOffDays = (operatingDays: string[]): { english: string; bengali: string } => {
-  const allDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const offDays = allDays.filter(day => !operatingDays.includes(day));
-  
+const getOffDays = (
+  operatingDays: string[],
+): { english: string; bengali: string } => {
+  const allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const offDays = allDays.filter((day) => !operatingDays.includes(day));
+
   if (offDays.length === 0) {
     return {
-      english: 'None (Daily)',
-      bengali: 'সপ্তাহের প্রতিদিন চলে',
+      english: "None (Daily)",
+      bengali: "সপ্তাহের প্রতিদিন চলে",
     };
   }
-  
+
   return {
-    english: offDays.map(getDayName).join(', '),
-    bengali: offDays.map(getDayNameBengali).join(', '),
+    english: offDays.map(getDayName).join(", "),
+    bengali: offDays.map(getDayNameBengali).join(", "),
   };
 };
 
 const parseTime = (timeString: string): number => {
   // Parse time like "10:30 AM BST" or "10:30 AM" to minutes since midnight
-  const cleanTime = timeString.replace(' BST', '').trim();
+  const cleanTime = timeString.replace(" BST", "").trim();
   const match = cleanTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  
+
   if (!match) return 0;
-  
+
   let hours = parseInt(match[1]);
   const minutes = parseInt(match[2]);
   const period = match[3].toUpperCase();
-  
-  if (period === 'PM' && hours !== 12) {
+
+  if (period === "PM" && hours !== 12) {
     hours += 12;
-  } else if (period === 'AM' && hours === 12) {
+  } else if (period === "AM" && hours === 12) {
     hours = 0;
   }
-  
+
   return hours * 60 + minutes;
 };
 
@@ -102,10 +112,11 @@ export default function RouteDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [trains, setTrains] = useState<any[]>([]);
   const [isSaved, setIsSaved] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
 
-  const stations = useMemo(() => slug ? parseRouteUrlSlug(slug) : null, [slug]);
+  const stations = useMemo(
+    () => (slug ? parseRouteUrlSlug(slug) : null),
+    [slug],
+  );
 
   useEffect(() => {
     if (stations) {
@@ -123,7 +134,7 @@ export default function RouteDetailScreen() {
 
   const handleBookmark = async () => {
     if (!stations || !slug) return;
-    
+
     if (isSaved) {
       await removeRouteFromQuickAccess(slug);
       setIsSaved(false);
@@ -138,31 +149,31 @@ export default function RouteDetailScreen() {
   }; // Use slug instead of stations to avoid infinite loop
 
   const handleViewTrainSchedule = (trainName: string) => {
-    const trainSlug = trainName.toLowerCase().replace(/\s+/g, '-');
-    const currentRoute = `/(tabs)/stations/${stations?.from ? formatStationNameForUrl(stations.from) : ''}/${slug}`;
+    const trainSlug = trainName.toLowerCase().replace(/\s+/g, "-");
+    const currentRoute = `/(tabs)/stations/${stations?.from ? formatStationNameForUrl(stations.from) : ""}/${slug}`;
     router.push({
       pathname: `/(tabs)/trains/${trainSlug}` as any,
-      params: { from: 'station-route', returnTo: currentRoute }
+      params: { from: "station-route", returnTo: currentRoute },
     });
   };
 
   const loadTrains = async () => {
     if (!stations) return;
-    
+
     try {
       setLoading(true);
       const trainsData = await getTrainsForRoute(stations.from, stations.to);
-      
+
       // Sort trains by departure time
       const sortedTrains = trainsData.sort((a, b) => {
         const timeA = parseTime(a.departure_from_source);
         const timeB = parseTime(b.departure_from_source);
         return timeA - timeB;
       });
-      
+
       setTrains(sortedTrains);
     } catch (error) {
-      console.error('Error loading trains:', error);
+      console.error("Error loading trains:", error);
     } finally {
       setLoading(false);
     }
@@ -170,22 +181,22 @@ export default function RouteDetailScreen() {
 
   if (!stations) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={[styles.container, styles.fallbackScreen]}>
         <View style={styles.centerContainer}>
-          <ThemedText>Invalid route</ThemedText>
+          <Text style={styles.fallbackText}>Invalid route</Text>
         </View>
-      </ThemedView>
+      </View>
     );
   }
 
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={[styles.container, styles.fallbackScreen]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <ThemedText style={styles.loadingText}>Loading train schedules...</ThemedText>
+          <ActivityIndicator size="large" color={FOCUS} />
+          <Text style={styles.loadingText}>Loading train schedules...</Text>
         </View>
-      </ThemedView>
+      </View>
     );
   }
 
@@ -194,140 +205,151 @@ export default function RouteDetailScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/snowflakes.png')}
+      source={require("@/assets/images/snowflakes.png")}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <View
+        style={[styles.container, { backgroundColor: "transparent" }]}
+      >
         <ScrollView style={styles.scrollView}>
           <View style={styles.buttonSection}>
             <SmartBackButton
               fallbackRoute={
                 stations?.from
                   ? (`/(tabs)/stations/${formatStationNameForUrl(stations.from)}` as any)
-                  : '/(tabs)/stations'
+                  : "/(tabs)/stations"
               }
             />
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
-                {
-                  backgroundColor: isSaved
-                    ? '#1877F2'
-                    : colorScheme === 'dark'
-                    ? '#2a2a2a'
-                    : '#f5f5f5',
-                  opacity: pressed ? 0.7 : 1,
-                },
+                isSaved ? styles.saveButtonSaved : styles.saveButtonUnsaved,
+                { opacity: pressed ? 0.7 : 1 },
               ]}
               onPress={handleBookmark}
             >
-              <ThemedText
+              <Text
                 style={[
                   styles.saveButtonText,
-                  { color: isSaved ? '#fff' : colors.text },
+                  isSaved
+                    ? styles.saveButtonTextSaved
+                    : styles.saveButtonTextUnsaved,
                 ]}
               >
-                {isSaved ? '⭐ ' : '☆ '}
-                {isSaved ? 'Saved to Quick Access' : 'Save to Quick Access'}
-              </ThemedText>
+                {isSaved ? "⭐ " : "☆ "}
+                {isSaved ? "Saved to Quick Access" : "Save to Quick Access"}
+              </Text>
             </Pressable>
           </View>
 
           <View style={styles.header}>
             <Image
-              source={require('@/assets/images/logo.png')}
+              source={require("@/assets/images/logo.png")}
               style={styles.logo}
               contentFit="contain"
             />
-          <ThemedText style={[styles.title, { fontFamily: Fonts.rounded }]}>
-            {stations.from} to {stations.to}
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>Train Schedule</ThemedText>
-          {(fromBengali || toBengali) && (
-            <ThemedText style={styles.titleBn}>
-              {fromBengali || stations.from} থেকে {toBengali || stations.to} ট্রেনের সময়সূচী
-            </ThemedText>
+            <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
+              {stations.from} to {stations.to}
+            </Text>
+            <Text style={styles.subtitle}>Train Schedule</Text>
+            {(fromBengali || toBengali) && (
+              <Text style={styles.titleBn}>
+                {fromBengali || stations.from} থেকে {toBengali || stations.to}{" "}
+                ট্রেনের সময়সূচী
+              </Text>
+            )}
+            <Text style={styles.trainCount}>
+              {trains.length} train{trains.length !== 1 ? "s" : ""} available
+            </Text>
+          </View>
+
+          <AdPlaceholder />
+
+          {trains.length > 0 ? (
+            <View style={styles.trainsList}>
+              {trains.map((train, index) => (
+                <View key={index} style={styles.trainCard}>
+                  <View style={styles.trainHeader}>
+                    <View style={styles.trainNameContainer}>
+                      <Text style={styles.trainName}>
+                        {train.train_name}
+                      </Text>
+                      <Pressable
+                        style={styles.viewDetailsButton}
+                        onPress={() =>
+                          handleViewTrainSchedule(train.train_name)
+                        }
+                      >
+                        <Text style={styles.viewDetailsText}>
+                          View Details
+                        </Text>
+                        <Text style={styles.viewDetailsIcon}>
+                          ↗
+                        </Text>
+                      </Pressable>
+                    </View>
+                    <Text style={styles.trainNumber}>
+                      #{train.train_number}
+                    </Text>
+                  </View>
+
+                  <View style={styles.timeRow}>
+                    <View style={styles.timeBox}>
+                      <Text style={styles.timeLabel}>
+                        Departure
+                      </Text>
+                      <Text style={styles.timeValue}>
+                        {train.departure_from_source.replace(" BST", "")}
+                      </Text>
+                    </View>
+                    <Text style={styles.arrow}>→</Text>
+                    <View style={styles.timeBox}>
+                      <Text style={styles.timeLabel}>Arrival</Text>
+                      <Text style={styles.timeValue}>
+                        {train.arrival_at_destination.replace(" BST", "")}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailsRow}>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>
+                        Duration
+                      </Text>
+                      <Text style={styles.detailValue}>
+                        {train.journey_duration}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>
+                        Off Day
+                      </Text>
+                      <Text style={styles.detailValue}>
+                        {getOffDays(train.days).english}
+                      </Text>
+                      <Text style={styles.detailValueBn}>
+                        {getOffDays(train.days).bengali}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No direct trains found for this route.
+              </Text>
+              <Text style={styles.emptySubtext}>
+                You may need to take connecting trains.
+              </Text>
+            </View>
           )}
-          <ThemedText style={styles.trainCount}>
-            {trains.length} train{trains.length !== 1 ? 's' : ''} available
-          </ThemedText>
-        </View>
 
-        <AdPlaceholder />
-
-        {trains.length > 0 ? (
-          <View style={styles.trainsList}>
-            {trains.map((train, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.trainCard,
-                  { backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#fff' },
-                ]}
-              >
-                <View style={styles.trainHeader}>
-                  <View style={styles.trainNameContainer}>
-                    <ThemedText style={styles.trainName}>{train.train_name}</ThemedText>
-                    <Pressable 
-                      style={styles.viewDetailsButton}
-                      onPress={() => handleViewTrainSchedule(train.train_name)}
-                    >
-                      <ThemedText style={styles.viewDetailsText}>View Details</ThemedText>
-                      <ThemedText style={styles.viewDetailsIcon}>↗</ThemedText>
-                    </Pressable>
-                  </View>
-                  <ThemedText style={styles.trainNumber}>#{train.train_number}</ThemedText>
-                </View>
-
-                <View style={styles.timeRow}>
-                  <View style={styles.timeBox}>
-                    <ThemedText style={styles.timeLabel}>Departure</ThemedText>
-                    <ThemedText style={styles.timeValue}>
-                      {train.departure_from_source.replace(' BST', '')}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={styles.arrow}>→</ThemedText>
-                  <View style={styles.timeBox}>
-                    <ThemedText style={styles.timeLabel}>Arrival</ThemedText>
-                    <ThemedText style={styles.timeValue}>
-                      {train.arrival_at_destination.replace(' BST', '')}
-                    </ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.detailsRow}>
-                  <View style={styles.detailItem}>
-                    <ThemedText style={styles.detailLabel}>Duration</ThemedText>
-                    <ThemedText style={styles.detailValue}>{train.journey_duration}</ThemedText>
-                  </View>
-                  <View style={styles.detailItem}>
-                    <ThemedText style={styles.detailLabel}>Off Day</ThemedText>
-                    <ThemedText style={styles.detailValue}>
-                      {getOffDays(train.days).english}
-                    </ThemedText>
-                    <ThemedText style={styles.detailValueBn}>
-                      {getOffDays(train.days).bengali}
-                    </ThemedText>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>
-              No direct trains found for this route.
-            </ThemedText>
-            <ThemedText style={styles.emptySubtext}>
-              You may need to take connecting trains.
-            </ThemedText>
-          </View>
-        )}
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </ThemedView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
     </ImageBackground>
   );
 }
@@ -335,6 +357,7 @@ export default function RouteDetailScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -342,47 +365,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  fallbackScreen: {
+    backgroundColor: PAGE_BG,
+  },
+  fallbackText: {
+    fontSize: 16,
+    color: TEXT,
+  },
   scrollView: {
     flex: 1,
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 12,
-    opacity: 0.7,
+    color: MUTED,
   },
   buttonSection: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   saveButton: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#1877F2',
-    shadowColor: '#000',
+    borderColor: FOCUS,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  saveButtonSaved: {
+    backgroundColor: FOCUS,
+  },
+  saveButtonUnsaved: {
+    backgroundColor: FIELD_BG,
+  },
   saveButtonText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  saveButtonTextSaved: {
+    color: "#fff",
+  },
+  saveButtonTextUnsaved: {
+    color: TEXT,
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   logo: {
     width: 150,
@@ -391,28 +433,29 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 4,
+    color: TEXT,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
+    textAlign: "center",
+    color: MUTED,
     marginBottom: 8,
   },
   titleBn: {
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    opacity: 0.8,
+    fontWeight: "600",
+    textAlign: "center",
+    color: MUTED,
     marginBottom: 8,
   },
   trainCount: {
     fontSize: 14,
-    textAlign: 'center',
-    opacity: 0.6,
-    fontWeight: '600',
+    textAlign: "center",
+    color: MUTED,
+    fontWeight: "600",
   },
   trainsList: {
     paddingHorizontal: 20,
@@ -421,112 +464,115 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: CARD,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   trainHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   trainNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     flex: 1,
   },
   trainName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
+    color: TEXT,
   },
   viewDetailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginLeft: 4,
     marginTop: -2,
   },
   viewDetailsText: {
     fontSize: 9,
-    color: '#1877F2',
-    fontWeight: '600',
+    color: FOCUS,
+    fontWeight: "600",
   },
   viewDetailsIcon: {
     fontSize: 12,
-    color: '#1877F2',
+    color: FOCUS,
     marginLeft: 2,
   },
   trainNumber: {
     fontSize: 14,
-    opacity: 0.6,
-    fontWeight: '600',
+    color: MUTED,
+    fontWeight: "600",
   },
   timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+    backgroundColor: "rgba(79, 70, 229, 0.05)",
     borderRadius: 8,
     paddingHorizontal: 12,
   },
   timeBox: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   timeLabel: {
     fontSize: 12,
-    opacity: 0.6,
+    color: MUTED,
     marginBottom: 4,
   },
   timeValue: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#4f46e5',
+    fontWeight: "700",
+    color: LINK,
   },
   arrow: {
     fontSize: 24,
     marginHorizontal: 12,
-    opacity: 0.4,
+    color: MUTED,
   },
   detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   detailItem: {
     flex: 1,
   },
   detailLabel: {
     fontSize: 12,
-    opacity: 0.6,
+    color: MUTED,
     marginBottom: 4,
   },
   detailValue: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
+    color: TEXT,
   },
   detailValueBn: {
     fontSize: 11,
-    fontWeight: '500',
-    opacity: 0.7,
+    fontWeight: "500",
+    color: MUTED,
     marginTop: 2,
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 16,
-    opacity: 0.7,
-    textAlign: 'center',
+    color: MUTED,
+    textAlign: "center",
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    opacity: 0.5,
-    textAlign: 'center',
+    color: MUTED,
+    textAlign: "center",
   },
 });

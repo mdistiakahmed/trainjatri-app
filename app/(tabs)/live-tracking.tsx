@@ -1,25 +1,35 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from "react";
 import {
   StyleSheet,
   View,
+  Text,
   ScrollView,
   TextInput,
   Pressable,
   Linking,
   Alert,
   ImageBackground,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { trainDataSummary } from '@/data/trainDataSummary';
-import { trainNameEnBnMapping } from '@/utils/trainNameEnBnMapping';
-import { Fonts } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
-import * as quickAccessStorage from '@/utils/quickAccessStorage';
-import AdPlaceholder from '@/components/ads/AdPlaceholder';
+} from "react-native";
+import { Image } from "expo-image";
+import { trainDataSummary } from "@/data/trainDataSummary";
+import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
+import { Fonts } from "@/constants/theme";
+import { useLocalSearchParams } from "expo-router";
+
+const TEXT = "#11181C";
+const MUTED = "#6b7280";
+const CARD = "#ffffff";
+const PAGE_BG = "#f7f8fa";
+const FIELD_BG = "#f5f5f5";
+const PLACEHOLDER = "#9aa3af";
+const BORDER = "#111111";
+const FOCUS = "#1877F2";
+const LINK = "#4f46e5";
+const SELECTED_BG = "#dbeafe";
+const SELECTED_TEXT = "#1e40af";
+const DROPDOWN_PRESSED = "#f5f5f5";
+import * as quickAccessStorage from "@/utils/quickAccessStorage";
+import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 interface TrainInfo {
   name: string;
@@ -31,21 +41,21 @@ interface TrainInfo {
 
 const getTrainBengaliName = (englishName: string) => {
   const upperName = englishName.toUpperCase();
-  return trainNameEnBnMapping[upperName as keyof typeof trainNameEnBnMapping] || '';
+  return (
+    trainNameEnBnMapping[upperName as keyof typeof trainNameEnBnMapping] || ""
+  );
 };
 
 export default function LiveTrackingScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedTrain, setSelectedTrain] = useState<TrainInfo | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
   const params = useLocalSearchParams();
 
   const sortedTrains = useMemo(
     () => [...trainDataSummary].sort((a, b) => a.name.localeCompare(b.name)),
-    []
+    [],
   );
 
   const searchResults = useMemo(() => {
@@ -84,15 +94,15 @@ export default function LiveTrackingScreen() {
           return Linking.openURL(smsUrl);
         } else {
           Alert.alert(
-            'SMS Not Available',
-            `Please manually send "TR ${trainNumber}" to 16318`
+            "SMS Not Available",
+            `Please manually send "TR ${trainNumber}" to 16318`,
           );
         }
       })
       .catch(() => {
         Alert.alert(
-          'Error',
-          `Please manually send "TR ${trainNumber}" to 16318`
+          "Error",
+          `Please manually send "TR ${trainNumber}" to 16318`,
         );
       });
   };
@@ -104,7 +114,7 @@ export default function LiveTrackingScreen() {
     }
     const savedTrackings = await quickAccessStorage.getSavedLiveTrackings();
     const isAlreadySaved = savedTrackings.some(
-      (item) => item.trainName === selectedTrain.name
+      (item) => item.trainName === selectedTrain.name,
     );
     setIsSaved(isAlreadySaved);
   };
@@ -129,7 +139,7 @@ export default function LiveTrackingScreen() {
         setIsSaved(true);
       }
     } catch (error) {
-      console.error('Error bookmarking live tracking:', error);
+      console.error("Error bookmarking live tracking:", error);
     }
   };
 
@@ -139,10 +149,8 @@ export default function LiveTrackingScreen() {
 
   // Load saved train from params (when opened from Quick Access)
   useEffect(() => {
-    if (params.trainName && typeof params.trainName === 'string') {
-      const train = sortedTrains.find(
-        (t) => t.name === params.trainName
-      );
+    if (params.trainName && typeof params.trainName === "string") {
+      const train = sortedTrains.find((t) => t.name === params.trainName);
       if (train) {
         setSelectedTrain(train);
         setSearchQuery(train.name);
@@ -152,231 +160,185 @@ export default function LiveTrackingScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/snowflakes.png')}
+      source={require("@/assets/images/snowflakes.png")}
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
     >
-      <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <View
+        style={[styles.container, { backgroundColor: "transparent" }]}
+      >
         <ScrollView style={styles.scrollView}>
           <View style={styles.header}>
             <Image
-              source={require('@/assets/images/logo.png')}
+              source={require("@/assets/images/logo.png")}
               style={styles.logo}
               contentFit="contain"
             />
             <View style={styles.headerContent}>
               <View style={styles.titleSection}>
-                <ThemedText
-                  type="title"
-                  style={[styles.title, { fontFamily: Fonts.rounded }]}
-                >
+                <Text style={[styles.title, { fontFamily: Fonts.rounded }]}>
                   Live Train Tracking
-                </ThemedText>
-                <ThemedText style={styles.subtitle}>
+                </Text>
+                <Text style={styles.subtitle}>
                   Search for a train to track its live location
-                </ThemedText>
+                </Text>
               </View>
               {selectedTrain && (
                 <View style={styles.buttonSection}>
                   <Pressable
                     style={[
                       styles.saveButton,
-                      {
-                        backgroundColor: isSaved ? '#1877F2' : 'transparent',
-                      },
+                      isSaved
+                        ? styles.saveButtonSaved
+                        : styles.saveButtonUnsaved,
                     ]}
                     onPress={handleBookmark}
                   >
-                    <ThemedText
+                    <Text
                       style={[
                         styles.saveButtonText,
-                        {
-                          color: isSaved ? '#fff' : '#1877F2',
-                        },
+                        isSaved
+                          ? styles.saveButtonTextSaved
+                          : styles.saveButtonTextUnsaved,
                       ]}
                     >
-                      {isSaved ? '⭐' : '☆'} {isSaved ? 'Saved to Quick Access' : 'Save to Quick Access'}
-                    </ThemedText>
+                      {isSaved ? "⭐" : "☆"}{" "}
+                      {isSaved
+                        ? "Saved to Quick Access"
+                        : "Save to Quick Access"}
+                    </Text>
                   </Pressable>
                 </View>
               )}
             </View>
           </View>
 
-        <View style={styles.searchSection}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-                  color: colors.text,
-                  borderColor: colorScheme === 'dark' ? '#444' : '#000',
-                },
-              ]}
-              placeholder="Search train name / ট্রেন সার্চ করুন"
-              placeholderTextColor={colors.tabIconDefault}
-              value={searchQuery}
-              onChangeText={handleInputChange}
-              onFocus={() => searchQuery.trim() && setShowDropdown(true)}
-            />
-            {showDropdown && searchResults.length > 0 && (
-              <View
-                style={[
-                  styles.dropdown,
-                  {
-                    backgroundColor: colorScheme === 'dark' ? '#1a1a1a' : '#fff',
-                    borderColor: colorScheme === 'dark' ? '#333' : '#e5e5e5',
-                  },
-                ]}
-              >
-                <ScrollView style={styles.dropdownScroll}>
-                  {searchResults.map((train, index) => {
-                    const bengaliName = getTrainBengaliName(train.name);
-                    return (
+          <View style={styles.searchSection}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search train name / ট্রেন সার্চ করুন"
+                placeholderTextColor={PLACEHOLDER}
+                value={searchQuery}
+                onChangeText={handleInputChange}
+                onFocus={() => searchQuery.trim() && setShowDropdown(true)}
+              />
+              {showDropdown && searchResults.length > 0 && (
+                <View style={styles.dropdown}>
+                  <ScrollView style={styles.dropdownScroll}>
+                    {searchResults.map((train, index) => {
+                      const bengaliName = getTrainBengaliName(train.name);
+                      return (
+                        <Pressable
+                          key={`${train.name}-${index}`}
+                          style={({ pressed }) => [
+                            styles.dropdownItem,
+                            {
+                              backgroundColor: pressed
+                                ? DROPDOWN_PRESSED
+                                : CARD,
+                            },
+                          ]}
+                          onPress={() => handleTrainSelect(train)}
+                        >
+                          <Text style={styles.trainName}>
+                            {train.name}
+                          </Text>
+                          {bengaliName && (
+                            <Text style={styles.trainNameBn}>
+                              {bengaliName}
+                            </Text>
+                          )}
+                          <Text style={styles.trainPath}>
+                            {train.forwardPath} / {train.reversePath}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
+            {selectedTrain && (
+              <View style={styles.selectedTrainCard}>
+                <Text style={styles.selectedTrainName}>
+                  {selectedTrain.name}
+                </Text>
+                {getTrainBengaliName(selectedTrain.name) && (
+                  <Text style={styles.selectedTrainNameBn}>
+                    {getTrainBengaliName(selectedTrain.name)}
+                  </Text>
+                )}
+
+                {selectedTrain.forwardTrainNumber && (
+                  <View style={styles.trackingCard}>
+                    <Text style={styles.trackingLabel}>
+                      To track{" "}
+                      <Text style={styles.bold}>
+                        {selectedTrain.forwardPath}
+                      </Text>
+                      :
+                    </Text>
+                    <View style={styles.smsRow}>
+                      <Text style={styles.smsText}>
+                        TR {selectedTrain.forwardTrainNumber} to 16318
+                      </Text>
                       <Pressable
-                        key={`${train.name}-${index}`}
                         style={({ pressed }) => [
-                          styles.dropdownItem,
-                          {
-                            backgroundColor: pressed
-                              ? colorScheme === 'dark'
-                                ? '#2a2a2a'
-                                : '#f5f5f5'
-                              : 'transparent',
-                          },
+                          styles.sendButton,
+                          { opacity: pressed ? 0.7 : 1 },
                         ]}
-                        onPress={() => handleTrainSelect(train)}
+                        onPress={() =>
+                          handleSendSMS(selectedTrain.forwardTrainNumber)
+                        }
                       >
-                        <ThemedText style={styles.trainName}>
-                          {train.name}
-                        </ThemedText>
-                        {bengaliName && (
-                          <ThemedText style={styles.trainNameBn}>
-                            {bengaliName}
-                          </ThemedText>
-                        )}
-                        <ThemedText style={styles.trainPath}>
-                          {train.forwardPath} / {train.reversePath}
-                        </ThemedText>
+                        <Text style={styles.sendButtonText}>
+                          Send SMS
+                        </Text>
                       </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                    </View>
+                  </View>
+                )}
+
+                {selectedTrain.reverseTrainNumber && (
+                  <View style={styles.trackingCard}>
+                    <Text style={styles.trackingLabel}>
+                      To track{" "}
+                      <Text style={styles.bold}>
+                        {selectedTrain.reversePath}
+                      </Text>
+                      :
+                    </Text>
+                    <View style={styles.smsRow}>
+                      <Text style={styles.smsText}>
+                        TR {selectedTrain.reverseTrainNumber} to 16318
+                      </Text>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.sendButton,
+                          { opacity: pressed ? 0.7 : 1 },
+                        ]}
+                        onPress={() =>
+                          handleSendSMS(selectedTrain.reverseTrainNumber)
+                        }
+                      >
+                        <Text style={styles.sendButtonText}>
+                          Send SMS
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
           </View>
 
-          {selectedTrain && (
-            <View
-              style={[
-                styles.selectedTrainCard,
-                {
-                  backgroundColor: colorScheme === 'dark' ? '#1e3a5f' : '#dbeafe',
-                },
-              ]}
-            >
-              <ThemedText style={[styles.selectedTrainName, { color: '#1e40af' }]}>
-                {selectedTrain.name}
-              </ThemedText>
-              {getTrainBengaliName(selectedTrain.name) && (
-                <ThemedText style={[styles.selectedTrainNameBn, { color: '#1e40af' }]}>
-                  {getTrainBengaliName(selectedTrain.name)}
-                </ThemedText>
-              )}
+          <AdPlaceholder />
 
-              {selectedTrain.forwardTrainNumber && (
-                <View
-                  style={[
-                    styles.trackingCard,
-                    {
-                      backgroundColor:
-                        colorScheme === 'dark' ? '#2a2a2a' : '#fff',
-                    },
-                  ]}
-                >
-                  <ThemedText style={styles.trackingLabel}>
-                    To track <ThemedText style={styles.bold}>{selectedTrain.forwardPath}</ThemedText>:
-                  </ThemedText>
-                  <View style={styles.smsRow}>
-                    <ThemedText
-                      style={[
-                        styles.smsText,
-                        {
-                          backgroundColor:
-                            colorScheme === 'dark' ? '#1a1a1a' : '#f5f5f5',
-                        },
-                      ]}
-                    >
-                      TR {selectedTrain.forwardTrainNumber} to 16318
-                    </ThemedText>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.sendButton,
-                        { opacity: pressed ? 0.7 : 1 },
-                      ]}
-                      onPress={() =>
-                        handleSendSMS(selectedTrain.forwardTrainNumber)
-                      }
-                    >
-                      <ThemedText style={styles.sendButtonText}>
-                        Send SMS
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                </View>
-              )}
-
-              {selectedTrain.reverseTrainNumber && (
-                <View
-                  style={[
-                    styles.trackingCard,
-                    {
-                      backgroundColor:
-                        colorScheme === 'dark' ? '#2a2a2a' : '#fff',
-                    },
-                  ]}
-                >
-                  <ThemedText style={styles.trackingLabel}>
-                    To track <ThemedText style={styles.bold}>{selectedTrain.reversePath}</ThemedText>:
-                  </ThemedText>
-                  <View style={styles.smsRow}>
-                    <ThemedText
-                      style={[
-                        styles.smsText,
-                        {
-                          backgroundColor:
-                            colorScheme === 'dark' ? '#1a1a1a' : '#f5f5f5',
-                        },
-                      ]}
-                    >
-                      TR {selectedTrain.reverseTrainNumber} to 16318
-                    </ThemedText>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.sendButton,
-                        { opacity: pressed ? 0.7 : 1 },
-                      ]}
-                      onPress={() =>
-                        handleSendSMS(selectedTrain.reverseTrainNumber)
-                      }
-                    >
-                      <ThemedText style={styles.sendButtonText}>
-                        Send SMS
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-
-        <AdPlaceholder />
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </ThemedView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
     </ImageBackground>
   );
 }
@@ -384,6 +346,7 @@ export default function LiveTrackingScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    backgroundColor: PAGE_BG,
   },
   backgroundImageStyle: {
     opacity: 0.5,
@@ -400,41 +363,43 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerContent: {
-    width: '100%',
+    width: "100%",
   },
   titleSection: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonSection: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginTop: 12,
   },
   logo: {
     width: 150,
     height: 75,
     marginBottom: 12,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 8,
+    color: TEXT,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
+    textAlign: "center",
+    color: MUTED,
   },
   bold: {
-    fontWeight: '700',
+    fontWeight: "700",
+    color: TEXT,
   },
   searchSection: {
     marginHorizontal: 20,
     marginBottom: 30,
   },
   searchContainer: {
-    position: 'relative',
+    position: "relative",
     zIndex: 1000,
   },
   searchInput: {
@@ -443,16 +408,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     borderWidth: 2,
+    borderColor: BORDER,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
   },
   dropdown: {
-    position: 'absolute',
+    position: "absolute",
     top: 55,
     left: 0,
     right: 0,
     maxHeight: 240,
     borderRadius: 10,
     borderWidth: 1,
-    shadowColor: '#000',
+    backgroundColor: CARD,
+    borderColor: "#e5e5e5",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -464,45 +434,49 @@ const styles = StyleSheet.create({
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: "#e5e5e5",
   },
   trainName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
+    color: TEXT,
   },
   trainNameBn: {
     fontSize: 14,
     marginBottom: 4,
-    opacity: 0.8,
+    color: MUTED,
   },
   trainPath: {
     fontSize: 14,
-    opacity: 0.7,
+    color: MUTED,
   },
   selectedTrainCard: {
     marginTop: 20,
     padding: 16,
     borderRadius: 12,
+    backgroundColor: SELECTED_BG,
   },
   selectedTrainName: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
+    color: SELECTED_TEXT,
   },
   selectedTrainNameBn: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 16,
-    opacity: 0.9,
+    color: SELECTED_TEXT,
   },
   trackingCard: {
     padding: 16,
     borderRadius: 10,
     marginBottom: 12,
-    shadowColor: '#000',
+    backgroundColor: CARD,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -511,43 +485,58 @@ const styles = StyleSheet.create({
   trackingLabel: {
     fontSize: 15,
     marginBottom: 8,
+    color: TEXT,
   },
   smsRow: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: 8,
   },
   smsText: {
     fontSize: 16,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     padding: 12,
     borderRadius: 8,
+    backgroundColor: FIELD_BG,
+    color: TEXT,
   },
   sendButton: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: LINK,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   sendButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   saveButton: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#1877F2",
+    borderColor: FOCUS,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  saveButtonSaved: {
+    backgroundColor: FOCUS,
+  },
+  saveButtonUnsaved: {
+    backgroundColor: FIELD_BG,
+  },
   saveButtonText: {
     fontSize: 9,
     fontWeight: "600",
+  },
+  saveButtonTextSaved: {
+    color: "#fff",
+  },
+  saveButtonTextUnsaved: {
+    color: TEXT,
   },
 });

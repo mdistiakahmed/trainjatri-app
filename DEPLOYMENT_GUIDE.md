@@ -5,21 +5,25 @@ This guide will walk you through deploying your TrainJatri app to the Google Pla
 ## Prerequisites
 
 ### 1. Install EAS CLI
+
 ```bash
 npm install -g eas-cli
 ```
 
 ### 2. Create an Expo Account
+
 - Go to https://expo.dev/signup
 - Sign up for a free account
 - Verify your email
 
 ### 3. Login to EAS
+
 ```bash
 eas login
 ```
 
 ### 4. Create a Google Play Console Account
+
 - Go to https://play.google.com/console
 - Pay the one-time $25 registration fee
 - Complete the account setup
@@ -27,14 +31,18 @@ eas login
 ## Step 1: Configure Your App
 
 ### Update app.json (Already Done)
+
 Your `app.json` is already configured with:
+
 - Package name: `com.trainjatri.app`
 - App name: `TrainJatri`
 - Version: `1.0.0`
 - Version code: `1`
 
 ### Create EAS Build Configuration
+
 Run this command to create `eas.json`:
+
 ```bash
 eas build:configure
 ```
@@ -69,15 +77,34 @@ This will create an `eas.json` file. Update it to look like this:
 }
 ```
 
+## Step 1b: Firebase `google-services.json` (EAS secret)
+
+Do **not** commit `google-services.json`. It is gitignored because GitHub treats the API key as a secret.
+
+Keep the file locally as `./google-services.json`. From the **app project directory** (`trainjatri-app/`, not the parent folder), upload it to EAS once per environment before you build:
+
+```bash
+cd trainjatri-app
+eas env:set --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --environment production --visibility secret
+eas env:set --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --environment preview --visibility secret
+```
+
+`app.config.js` uses `GOOGLE_SERVICES_JSON` on EAS builds, and falls back to `./google-services.json` on your machine.
+
+If you later download a new Firebase config, run the same commands again (or update the existing env vars in the Expo dashboard).
+
 ## Step 2: Build Your App
 
 ### For Testing (APK)
+
 Build an APK to test on your device first:
+
 ```bash
 eas build --platform android --profile preview
 ```
 
 This will:
+
 1. Upload your code to Expo's servers
 2. Build an APK file
 3. Provide a download link when complete (takes 10-20 minutes)
@@ -85,7 +112,9 @@ This will:
 Download and install the APK on your Android device to test.
 
 ### For Production (AAB)
+
 Once testing is complete, build the production app bundle:
+
 ```bash
 eas build --platform android --profile production
 ```
@@ -99,6 +128,7 @@ This creates an `.aab` (Android App Bundle) file optimized for Play Store.
 Before submitting, prepare these materials:
 
 ### Required Graphics
+
 1. **App Icon** (already have: `icon.png`)
    - 512x512 PNG
    - No transparency
@@ -118,12 +148,15 @@ Before submitting, prepare these materials:
      - Live tracking
 
 ### Required Text Content
+
 1. **Short Description** (max 80 characters)
+
    ```
    Complete Bangladesh Railway guide with train schedules & live tracking
    ```
 
 2. **Full Description** (max 4000 characters)
+
    ```
    TrainJatri - Your Complete Bangladesh Railway Guide
 
@@ -156,6 +189,7 @@ Before submitting, prepare these materials:
 ## Step 4: Create App in Google Play Console
 
 ### 1. Create New App
+
 1. Go to https://play.google.com/console
 2. Click "Create app"
 3. Fill in:
@@ -168,14 +202,17 @@ Before submitting, prepare these materials:
 ### 2. Complete Setup Checklist
 
 #### App Access
+
 - Select "All functionality is available without special access"
 - Click Save
 
 #### Ads
+
 - Select whether your app contains ads (currently no)
 - Click Save
 
 #### Content Rating
+
 1. Click "Start questionnaire"
 2. Enter your email
 3. Select category: `Utility, Productivity, Communication, or Other`
@@ -183,19 +220,23 @@ Before submitting, prepare these materials:
 5. Submit and save rating
 
 #### Target Audience
+
 1. Select age groups (e.g., 13+)
 2. Appeal to children: No
 3. Click Save
 
 #### News App
+
 - Select No
 - Click Save
 
 #### COVID-19 Contact Tracing & Status Apps
+
 - Select No
 - Click Save
 
 #### Data Safety
+
 1. Click "Start"
 2. Answer questions about data collection:
    - Does your app collect user data? `No` (unless you add analytics)
@@ -203,33 +244,40 @@ Before submitting, prepare these materials:
 3. Click Save
 
 #### Government Apps
+
 - Select No
 - Click Save
 
 #### Financial Features
+
 - Select No
 - Click Save
 
 #### Health
+
 - Select No
 - Click Save
 
 ## Step 5: Create Release
 
 ### 1. Production Track
+
 1. In left menu, go to "Production"
 2. Click "Create new release"
 
 ### 2. Upload App Bundle
+
 1. Click "Upload"
 2. Upload the `.aab` file from EAS build
    - Download it from the EAS build page
    - Or use: `eas submit --platform android` (automated)
 
 ### 3. Release Name
+
 - Automatically filled (e.g., "1 (1.0.0)")
 
 ### 4. Release Notes
+
 ```
 Initial release
 
@@ -247,9 +295,11 @@ Features:
 ## Step 6: Store Listing
 
 ### 1. Main Store Listing
+
 Go to "Store presence" > "Main store listing"
 
 Fill in:
+
 - **App name**: TrainJatri
 - **Short description**: (from above)
 - **Full description**: (from above)
@@ -258,10 +308,12 @@ Fill in:
 - **Phone screenshots**: Upload 2-8 screenshots
 
 ### 2. Categorization
+
 - **App category**: Travel & Local
 - **Tags**: railway, train, schedule, tracking, bangladesh
 
 ### 3. Contact Details
+
 - Email: your-email@example.com
 - Website: (optional)
 - Phone: (optional)
@@ -287,6 +339,7 @@ Fill in:
 ## Step 9: After Approval
 
 Once approved:
+
 1. Your app will be live on Play Store
 2. Update the website with Play Store link
 3. Share with users!
@@ -311,6 +364,7 @@ eas submit --platform android
 When you want to release updates:
 
 1. Update version in `app.json`:
+
    ```json
    {
      "version": "1.1.0",
@@ -319,9 +373,11 @@ When you want to release updates:
      }
    }
    ```
+
    **Important**: Always increment `versionCode` for each release!
 
 2. Build new version:
+
    ```bash
    eas build --platform android --profile production
    ```
@@ -334,6 +390,7 @@ When you want to release updates:
 ## Troubleshooting
 
 ### Build Fails
+
 - Check error logs in EAS dashboard
 - Common issues:
   - Missing dependencies: `npm install`
@@ -341,6 +398,7 @@ When you want to release updates:
   - TypeScript errors: Fix before building
 
 ### Submission Rejected
+
 - Read rejection reason carefully
 - Common issues:
   - Missing privacy policy
@@ -349,6 +407,7 @@ When you want to release updates:
   - Target audience conflicts
 
 ### App Not Appearing in Search
+
 - Wait 24-48 hours after approval
 - Optimize store listing with keywords
 - Get initial downloads/reviews
@@ -359,7 +418,7 @@ When you want to release updates:
 # Check build status
 eas build:list
 
-# View submission status  
+# View submission status
 eas submission:list
 
 # Update credentials
@@ -367,6 +426,10 @@ eas credentials
 
 # View project info
 eas project:info
+
+# Upload Firebase google-services.json (run from trainjatri-app/, do not commit this file)
+eas env:set --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --environment production --visibility secret
+eas env:set --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --environment preview --visibility secret
 ```
 
 ## Resources

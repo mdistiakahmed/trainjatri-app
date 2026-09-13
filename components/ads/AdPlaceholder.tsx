@@ -1,7 +1,5 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import React, { useMemo } from "react";
+import { StyleSheet, View, Text } from "react-native";
 
 const inspirationalQuotes = [
   "Travel is the only thing you buy that makes you richer.",
@@ -22,25 +20,17 @@ const inspirationalQuotes = [
 ];
 
 export default function AdPlaceholder() {
-  const colorScheme = useColorScheme();
-  
   const quote = useMemo(() => {
-    return inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)];
+    return inspirationalQuotes[
+      Math.floor(Math.random() * inspirationalQuotes.length)
+    ];
   }, []);
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colorScheme === 'dark' ? '#1a1a1a' : '#f9fafb',
-          borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb',
-        },
-      ]}
-    >
-      <ThemedText style={styles.label}>Advertisement</ThemedText>
+    <View style={styles.container}>
+      <Text style={styles.label}>Advertisement</Text>
       <View style={styles.quoteContainer}>
-        <ThemedText style={styles.quote}>"{quote}"</ThemedText>
+        <Text style={styles.quote}>"{quote}"</Text>
       </View>
     </View>
   );
@@ -54,14 +44,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     minHeight: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
+    borderColor: "#e5e7eb",
   },
   label: {
     fontSize: 10,
-    opacity: 0.5,
+    color: "#6b7280",
     marginBottom: 8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
   quoteContainer: {
@@ -69,9 +61,9 @@ const styles = StyleSheet.create({
   },
   quote: {
     fontSize: 14,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
     lineHeight: 20,
-    opacity: 0.8,
+    color: "#11181C",
   },
 });
