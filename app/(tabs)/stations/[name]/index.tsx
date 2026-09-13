@@ -17,7 +17,7 @@ import {
   createRouteUrlSlugFromStations,
   formatStationNameForUrl,
 } from "@/utils/stringutils";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 import {
   isStationSaved,
   saveStationToQuickAccess,
@@ -33,8 +33,6 @@ const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
 const PLACEHOLDER = "#9aa3af";
 const BORDER = "#111111";
-const FOCUS = "#1877F2";
-const LINK = "#4f46e5";
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, "_");
@@ -180,7 +178,7 @@ export default function StationDetailScreen() {
             <TextInput
               style={[
                 styles.searchInput,
-                { borderColor: isSearchFocused ? FOCUS : BORDER },
+                { borderColor: isSearchFocused ? BLUE_ACTIVE : BORDER },
               ]}
               placeholder="Search destination / গন্তব্য সার্চ করুন"
               placeholderTextColor={PLACEHOLDER}
@@ -275,7 +273,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: FOCUS,
+    borderColor: BLUE_ACTIVE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -283,7 +281,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonSaved: {
-    backgroundColor: FOCUS,
+    backgroundColor: BLUE_ACTIVE,
   },
   saveButtonUnsaved: {
     backgroundColor: FIELD_BG,
@@ -379,7 +377,7 @@ const styles = StyleSheet.create({
   toStation: {
     fontSize: 16,
     fontWeight: "600",
-    color: LINK,
+    color: BLUE_ACTIVE,
   },
   routeBengali: {
     fontSize: 14,

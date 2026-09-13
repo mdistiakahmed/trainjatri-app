@@ -13,7 +13,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { getDataForTrain } from "@/utils/getData";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 import {
   isTrainSaved,
   saveTrainToQuickAccess,
@@ -29,7 +29,6 @@ const PAGE_BG = "#f7f8fa";
 const TABLE_HEADER = "#f5f5f5";
 const TABLE_ZEBRA = "#fafafa";
 const FIELD_BG = "#f5f5f5";
-const FOCUS = "#1877F2";
 
 interface Route {
   city: string;
@@ -228,7 +227,7 @@ export default function TrainDetailScreen() {
             <View style={styles.buttonSection}>
               <TrainBackButton />
             </View>
-            <ActivityIndicator size="large" color={FOCUS} />
+            <ActivityIndicator size="large" color={BLUE_ACTIVE} />
           </View>
         </View>
       </ImageBackground>
@@ -431,7 +430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: FOCUS,
+    borderColor: BLUE_ACTIVE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -439,7 +438,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonSaved: {
-    backgroundColor: FOCUS,
+    backgroundColor: BLUE_ACTIVE,
   },
   saveButtonUnsaved: {
     backgroundColor: FIELD_BG,
@@ -479,8 +478,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   tabButtonActive: {
-    backgroundColor: "#1877F2",
-    shadowColor: "#1877F2",
+    backgroundColor: BLUE_ACTIVE,
+    shadowColor: BLUE_ACTIVE,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -502,7 +501,7 @@ const styles = StyleSheet.create({
   routePath: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#046ce6",
+    color: BLUE_ACTIVE,
     textAlign: "center",
     marginBottom: 4,
   },

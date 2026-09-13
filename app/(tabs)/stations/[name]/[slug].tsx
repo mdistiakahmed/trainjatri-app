@@ -16,7 +16,7 @@ import {
 } from "@/utils/stringutils";
 import { getTrainsForRoute } from "@/utils/routeData";
 import { cityEnBnMapping } from "@/utils/stationNameEnBnMapping";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 import {
   isRouteSaved,
   saveRouteToQuickAccess,
@@ -30,8 +30,6 @@ const MUTED = "#6b7280";
 const CARD = "#ffffff";
 const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
-const FOCUS = "#1877F2";
-const LINK = "#4f46e5";
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, "_");
@@ -193,7 +191,7 @@ export default function RouteDetailScreen() {
     return (
       <View style={[styles.container, styles.fallbackScreen]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={FOCUS} />
+          <ActivityIndicator size="large" color={BLUE_ACTIVE} />
           <Text style={styles.loadingText}>Loading train schedules...</Text>
         </View>
       </View>
@@ -395,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: FOCUS,
+    borderColor: BLUE_ACTIVE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -403,7 +401,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonSaved: {
-    backgroundColor: FOCUS,
+    backgroundColor: BLUE_ACTIVE,
   },
   saveButtonUnsaved: {
     backgroundColor: FIELD_BG,
@@ -491,12 +489,12 @@ const styles = StyleSheet.create({
   },
   viewDetailsText: {
     fontSize: 9,
-    color: FOCUS,
+    color: BLUE_ACTIVE,
     fontWeight: "600",
   },
   viewDetailsIcon: {
     fontSize: 12,
-    color: FOCUS,
+    color: BLUE_ACTIVE,
     marginLeft: 2,
   },
   trainNumber: {
@@ -510,7 +508,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
     paddingVertical: 12,
-    backgroundColor: "rgba(79, 70, 229, 0.05)",
+    backgroundColor: "rgba(24, 119, 242, 0.05)",
     borderRadius: 8,
     paddingHorizontal: 12,
   },
@@ -526,7 +524,7 @@ const styles = StyleSheet.create({
   timeValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: LINK,
+    color: BLUE_ACTIVE,
   },
   arrow: {
     fontSize: 24,

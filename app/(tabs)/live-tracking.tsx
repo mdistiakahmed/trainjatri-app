@@ -13,8 +13,10 @@ import {
 import { trainDataSummary } from "@/data/trainDataSummary";
 import { BrandLogo } from "@/components/BrandLogo";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 import { useLocalSearchParams } from "expo-router";
+import * as quickAccessStorage from "@/utils/quickAccessStorage";
+import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 const TEXT = "#11181C";
 const MUTED = "#6b7280";
@@ -23,13 +25,8 @@ const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
 const PLACEHOLDER = "#9aa3af";
 const BORDER = "#111111";
-const FOCUS = "#1877F2";
-const LINK = "#4f46e5";
 const SELECTED_BG = "#dbeafe";
-const SELECTED_TEXT = "#1e40af";
 const DROPDOWN_PRESSED = "#f5f5f5";
-import * as quickAccessStorage from "@/utils/quickAccessStorage";
-import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 interface TrainInfo {
   name: string;
@@ -459,13 +456,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
     textTransform: "capitalize",
-    color: SELECTED_TEXT,
+    color: BLUE_ACTIVE,
   },
   selectedTrainNameBn: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 16,
-    color: SELECTED_TEXT,
+    color: BLUE_ACTIVE,
   },
   trackingCard: {
     padding: 16,
@@ -496,7 +493,7 @@ const styles = StyleSheet.create({
     color: TEXT,
   },
   sendButton: {
-    backgroundColor: LINK,
+    backgroundColor: BLUE_ACTIVE,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -512,7 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: FOCUS,
+    borderColor: BLUE_ACTIVE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -520,7 +517,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonSaved: {
-    backgroundColor: FOCUS,
+    backgroundColor: BLUE_ACTIVE,
   },
   saveButtonUnsaved: {
     backgroundColor: FIELD_BG,

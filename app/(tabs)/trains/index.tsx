@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { BrandLogo } from "@/components/BrandLogo";
 import { uniqueTrainNames } from "@/utils/trainNames";
 import { trainNameEnBnMapping } from "@/utils/trainNameEnBnMapping";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, Fonts } from "@/constants/theme";
 
 const TEXT = "#11181C";
 const MUTED = "#6b7280";
@@ -20,9 +20,7 @@ const CARD = "#ffffff";
 const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
 const PLACEHOLDER = "#9aa3af";
-const LINK = "#4f46e5";
 const BORDER = "#111111";
-const FOCUS = "#1877F2";
 
 const stripBracketContent = (name: string) => {
   return name.replace(/\s*\(.*?\)\s*/g, "").trim();
@@ -79,7 +77,7 @@ export default function TrainsScreen() {
                 styles.searchInput,
                 {
                   borderWidth: isSearchFocused ? 3 : 2,
-                  borderColor: isSearchFocused ? FOCUS : BORDER,
+                  borderColor: isSearchFocused ? BLUE_ACTIVE : BORDER,
                 },
               ]}
               placeholder="Search train name / ট্রেন সার্চ করুন"
@@ -200,7 +198,7 @@ const styles = StyleSheet.create({
   },
   viewDetails: {
     fontSize: 14,
-    color: LINK,
+    color: BLUE_ACTIVE,
     fontWeight: "500",
     marginTop: 4,
   },

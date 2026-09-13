@@ -21,6 +21,7 @@ import {
   SavedRoute,
   SavedLiveTracking,
 } from "@/utils/quickAccessStorage";
+import { BLUE_ACTIVE } from "@/constants/theme";
 
 export default function Topbar() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -496,13 +497,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1877F2",
+    color: BLUE_ACTIVE,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
   sectionDivider: {
     height: 2,
-    backgroundColor: "#1877F2",
+    backgroundColor: BLUE_ACTIVE,
     marginHorizontal: 20,
     marginBottom: 16,
   },
@@ -512,13 +513,13 @@ const styles = StyleSheet.create({
   subSectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1877F2",
+    color: BLUE_ACTIVE,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
   subSectionDivider: {
     height: 1,
-    backgroundColor: "#1877F2",
+    backgroundColor: BLUE_ACTIVE,
     marginHorizontal: 20,
     marginBottom: 12,
   },

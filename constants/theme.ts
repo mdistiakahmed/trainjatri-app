@@ -5,8 +5,13 @@
 
 import { Platform } from "react-native";
 
-const tintColorLight = "#1877F2"; // Facebook blue
-const tintColorDark = "#1877F2"; // Facebook blue
+/** Active tab, links, and interactive blue icons/text. */
+export const BLUE_ACTIVE = "#1877F2";
+/** Disabled search button and other inactive blue states. */
+export const BLUE_INACTIVE = "#9bb7df";
+
+const tintColorLight = BLUE_ACTIVE;
+const tintColorDark = BLUE_ACTIVE;
 
 export const Colors = {
   light: {

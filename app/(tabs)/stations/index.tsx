@@ -16,7 +16,7 @@ import {
   createRouteUrlSlugFromStations,
   formatStationNameForUrl,
 } from "@/utils/stringutils";
-import { Fonts } from "@/constants/theme";
+import { BLUE_ACTIVE, BLUE_INACTIVE, Fonts } from "@/constants/theme";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
 
 const TEXT = "#11181C";
@@ -26,9 +26,7 @@ const PAGE_BG = "#f7f8fa";
 const FIELD_BG = "#f5f5f5";
 const PLACEHOLDER = "#9aa3af";
 const BORDER = "#111111";
-const FOCUS = "#1877F2";
 const DROPDOWN_PRESSED = "#e8f4ff";
-const DISABLED = "#999999";
 
 const stationNameToMappingKey = (name: string) =>
   name.trim().replace(/\s+/g, "_");
@@ -295,7 +293,7 @@ export default function StationsScreen() {
                 styles.searchButton,
                 {
                   opacity: fromStation ? (pressed ? 0.7 : 1) : 0.5,
-                  backgroundColor: fromStation ? FOCUS : DISABLED,
+                  backgroundColor: fromStation ? BLUE_ACTIVE : BLUE_INACTIVE,
                 },
               ]}
               onPress={handleSearchRoute}
@@ -430,7 +428,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     backgroundColor: CARD,
-    borderColor: FOCUS,
+    borderColor: BLUE_ACTIVE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   searchButton: {
-    backgroundColor: FOCUS,
+    backgroundColor: BLUE_ACTIVE,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 10,

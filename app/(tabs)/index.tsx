@@ -20,8 +20,8 @@ import {
   formatStationNameForUrl,
 } from "@/utils/stringutils";
 import AdPlaceholder from "@/components/ads/AdPlaceholder";
+import { BLUE_ACTIVE, BLUE_INACTIVE } from "@/constants/theme";
 
-const PRIMARY_BLUE = "#1D61C4";
 const ACCENT_GREEN = "#2E9B4A";
 const TEXT = "#11181C";
 const MUTED = "#6b7280";
@@ -167,7 +167,7 @@ export default function HomeScreen() {
           styles.stationField,
           {
             backgroundColor: FIELD_BG,
-            borderColor: focused ? PRIMARY_BLUE : "transparent",
+            borderColor: focused ? BLUE_ACTIVE : "transparent",
             borderWidth: focused ? 2 : 0,
             opacity: editable ? 1 : 0.55,
           },
@@ -182,7 +182,7 @@ export default function HomeScreen() {
         }}
       >
         <View style={styles.pinCircle}>
-          <MaterialIcons name="location-on" size={18} color={PRIMARY_BLUE} />
+          <MaterialIcons name="location-on" size={18} color={BLUE_ACTIVE} />
         </View>
         <View style={styles.fieldTextWrap}>
           <Text style={styles.fieldLabel}>{label}</Text>
@@ -208,7 +208,7 @@ export default function HomeScreen() {
         <View
           style={[
             styles.dropdown,
-            { backgroundColor: CARD, borderColor: PRIMARY_BLUE },
+            { backgroundColor: CARD, borderColor: BLUE_ACTIVE },
           ]}
         >
           <ScrollView
@@ -308,7 +308,7 @@ export default function HomeScreen() {
               style={({ pressed }) => [
                 styles.searchButton,
                 {
-                  backgroundColor: fromStation ? PRIMARY_BLUE : "#9bb7df",
+                  backgroundColor: fromStation ? BLUE_ACTIVE : BLUE_INACTIVE,
                   opacity: pressed && fromStation ? 0.85 : 1,
                 },
               ]}
@@ -326,7 +326,7 @@ export default function HomeScreen() {
               labelBn="ট্রেন সময়সূচি"
               icon="train"
               bg="#E7F1FF"
-              iconColor={PRIMARY_BLUE}
+              iconColor={BLUE_ACTIVE}
               onPress={() => router.push("/(tabs)/trains")}
             />
             <QuickAction
@@ -383,7 +383,7 @@ export default function HomeScreen() {
                     <MaterialIcons
                       name="train"
                       size={20}
-                      color={PRIMARY_BLUE}
+                      color={BLUE_ACTIVE}
                     />
                   </View>
                   <View style={styles.listCardText}>
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
   },
   viewAllLink: {
     fontSize: 14,
-    color: PRIMARY_BLUE,
+    color: BLUE_ACTIVE,
     fontWeight: "700",
   },
   listCard: {
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   },
   listCardLink: {
     fontSize: 12,
-    color: PRIMARY_BLUE,
+    color: BLUE_ACTIVE,
     fontWeight: "700",
   },
   stationsGrid: {
