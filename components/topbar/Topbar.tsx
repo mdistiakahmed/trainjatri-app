@@ -17,6 +17,10 @@ import {
   getSavedStations,
   getSavedRoutes,
   getSavedLiveTrackings,
+  removeTrainFromQuickAccess,
+  removeStationFromQuickAccess,
+  removeRouteFromQuickAccess,
+  removeSavedLiveTracking,
   SavedTrain,
   SavedStation,
   SavedRoute,
@@ -39,12 +43,14 @@ function MenuRow({
   sublabel,
   active = false,
   onPress,
+  onRemove,
 }: {
   icon: IconName;
   label: string;
   sublabel?: string;
   active?: boolean;
   onPress: () => void;
+  onRemove?: () => void;
 }) {
   return (
     <Pressable
@@ -74,6 +80,21 @@ function MenuRow({
           </Text>
         ) : null}
       </View>
+      {onRemove ? (
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.removeButton,
+            { opacity: pressed ? 0.6 : 1 },
+          ]}
+        >
+          <MaterialIcons name="close" size={16} color={MUTED} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -212,7 +233,10 @@ export default function Topbar() {
             <Pressable style={styles.menuInner} onPress={(e) => e.stopPropagation()}>
               <View style={styles.menuHeader}>
                 <MaterialIcons name="train" size={28} color={BLUE_ACTIVE} />
-                <Text style={styles.menuBrand}>TrainJatri</Text>
+                <View style={styles.menuBrandRow}>
+                  <Text style={styles.menuBrandMain}>TrainJatri</Text>
+                  <Text style={styles.menuBrandDomain}>.com</Text>
+                </View>
               </View>
 
               <View style={styles.headerDivider} />
@@ -268,6 +292,10 @@ export default function Topbar() {
                           router.push(`/(tabs)/trains/${train.slug}` as any),
                         )
                       }
+                      onRemove={async () => {
+                        await removeTrainFromQuickAccess(train.slug);
+                        await loadSavedItems();
+                      }}
                     />
                   ))
                 ) : (
@@ -286,6 +314,10 @@ export default function Topbar() {
                           router.push(`/(tabs)/stations/${station.slug}` as any),
                         )
                       }
+                      onRemove={async () => {
+                        await removeStationFromQuickAccess(station.slug);
+                        await loadSavedItems();
+                      }}
                     />
                   ))
                 ) : (
@@ -309,6 +341,10 @@ export default function Topbar() {
                           ),
                         );
                       }}
+                      onRemove={async () => {
+                        await removeRouteFromQuickAccess(route.slug);
+                        await loadSavedItems();
+                      }}
                     />
                   ))
                 ) : (
@@ -330,6 +366,10 @@ export default function Topbar() {
                           ),
                         )
                       }
+                      onRemove={async () => {
+                        await removeSavedLiveTracking(tracking.trainName);
+                        await loadSavedItems();
+                      }}
                     />
                   ))
                 ) : (
@@ -437,11 +477,19 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 12,
   },
-  menuBrand: {
-    fontSize: 22,
-    fontWeight: "400",
-    color: TEXT,
-    letterSpacing: 0.15,
+  menuBrandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  menuBrandMain: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#dc2626",
+  },
+  menuBrandDomain: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginLeft: 2,
   },
   headerDivider: {
     height: StyleSheet.hairlineWidth,
@@ -476,6 +524,14 @@ const styles = StyleSheet.create({
   },
   menuRowTextWrap: {
     flex: 1,
+  },
+  removeButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 4,
   },
   menuRowLabel: {
     fontSize: 14,
